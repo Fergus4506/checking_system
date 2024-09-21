@@ -25,11 +25,13 @@
             fetch('http://localhost:3000/login', {
                 method: 'POST',
                 headers: {
+                    // 設定post中帶的格式為json
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ username, password })
+                // post所帶的資料，這邊是username和password，用JSON.stringify轉成json格式
             })
-            .then(response => response.json())
+            .then(response => response.json())//將回傳的資料轉成json格式
             .then(data => {
                 if (data.token) {
                     localStorage.setItem('token', data.token);

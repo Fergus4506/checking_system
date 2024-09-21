@@ -15,10 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 模擬的使用者資料庫
 const users = [];
 
-app.post('/test', (req, res) => {
-    res.json({ message: 'Hello World!' });
-})
-
+//註冊使用者
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
     const existingUser = users.find(user => user.username === username);
@@ -28,11 +25,14 @@ app.post('/register', (req, res) => {
     }
 
     users.push({ username, password });
+
+    // 利用JWT對SECRET_KEY進行加密，並設定過期時間為1小時
     const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
 
     res.json({ message: 'User registered successfully', token });
 });
 
+//驗證使用者
 app.post('/verify-token', (req, res) => {
     const { token } = req.body;
 

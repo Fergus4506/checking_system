@@ -33,14 +33,16 @@
                 fetch('http://localhost:3000/register', {
                     method: 'POST',
                     headers: {
+                        // 設定post中帶的格式為json
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ username, password })
+                    // post所帶的資料，這邊是username和password，用JSON.stringify轉成json格式
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.token) {
-                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('token', data.token);//將token存入本地端(其實就是cookie)
                         alert('Registration successful!');
                     } else {
                         alert(data.error);
@@ -70,6 +72,7 @@
             .catch(error => console.error('Error:', error));
         }
 
+        //確認是否有註冊過(有無token)
         if (token) {
             verifyToken();
         } else {
