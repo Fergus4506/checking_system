@@ -1,46 +1,51 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
+const fs = require('fs');
 const path = require('path');
-require('dotenv').config(); // 儲存 API Key 和 Secret 的 .env 檔案
+require('dotenv').config(); // 確保你已經設定好 .env 文件來存放 API_KEY 和 SECRET
 
 const app = express();
-app.use(bodyParser.json({ limit: '10mb' })); // 用於解析圖像的 base64 數據
+app.use(bodyParser.json({ limit: '10mb' })); // 處理 base64 圖像數據
 
 // Face++ API 資訊
-const FACE_API_KEY = process.env.FACE_API_KEY; // 你的 Face++ API Key
-const FACE_API_SECRET = process.env.FACE_API_SECRET; // 你的 Face++ API Secret
-const FACE_API_URL = 'https://api-us.faceplusplus.com/facepp/v3/detect';
+const FACE_API_KEY = process.env.FACE_API_KEY;
+const FACE_API_SECRET = process.env.FACE_API_SECRET;
+const FACE_COMPARE_URL = 'https://api-us.faceplusplus.com/facepp/v3/compare';
 
-// 處理前端發送過來的圖像
-app.post('/recognize', async (req, res) => {
-    const imageBase64 = req.body.image.replace(/^data:image\/\w+;base64,/, ""); // 去掉 base64 的前綴
-    const imageBuffer = Buffer.from(imageBase64, 'base64'); // 將圖像轉為 Buffer
+// 你的已有照片的 base64 或 URL (此處為示例的圖片)
+// 讀取圖片並轉換成 base64 編碼
+const imagePath = path.join(__dirname, 'image', 'your_image.jpg');
+const imageBuffer = fs.readFileSync(imagePath);
+const STORED_IMAGE_BASE64 = imageBuffer.toString('base64');
+
+// 處理前端發送的圖像並進行比對
+app.post('/compare', async (req, res) => {
+    const capturedImageBase64 = req.body.image.replace(/^data:image\/\w+;base64,/, ""); // 去掉 base64 的前綴
 
     try {
-        // 發送請求到 Face++ API 進行人臉識別
-        const response = await axios.post(FACE_API_URL, null, {
+        // 發送到 Face++ 進行人臉比對
+        const response = await axios.post(FACE_COMPARE_URL, null, {
             params: {
                 api_key: FACE_API_KEY,
                 api_secret: FACE_API_SECRET,
-                image_base64: imageBase64,
-                return_attributes: 'gender,age,emotion', // 可以根據需求調整返回的屬性
+                image_base64_1: capturedImageBase64, // 用戶捕捉的圖像
+                image_base64_2: STORED_IMAGE_BASE64, // 你的基準圖片
             },
         });
 
-        const faces = response.data.faces;
-        if (faces.length > 0) {
-            res.json({ message: `Detected ${faces.length} faces`, data: faces });
+        // 處理 API 的返回結果
+        const result = response.data;
+        if (result.confidence) {
+            res.json({ message: `Confidence score: ${result.confidence}` });
         } else {
-            res.json({ message: 'No face detected' });
+            res.json({ message: 'Face comparison failed' });
         }
     } catch (error) {
-        console.error('Error calling Face++ API:', error);
-        res.status(500).json({ message: 'Error processing the image' });
+        console.error('Error during face comparison:', error);
+        res.status(500).json({ message: 'Error processing the comparison' });
     }
 });
-
-app.use(express.static(path.join(__dirname, 'public')));
 
 // 啟動服務
 app.listen(3000, () => {
