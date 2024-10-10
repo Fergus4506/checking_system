@@ -15,7 +15,7 @@ const FACE_COMPARE_URL = 'https://api-us.faceplusplus.com/facepp/v3/compare';
 
 // 你的已有照片的 base64 或 URL (此處為示例的圖片)
 // 讀取圖片並轉換成 base64 編碼
-const imagePath = path.join(__dirname, 'image', 'your_image.jpg');
+const imagePath = path.join(__dirname, 'image', 'myphoto.jpg');
 const imageBuffer = fs.readFileSync(imagePath);
 const STORED_IMAGE_BASE64 = imageBuffer.toString('base64');
 
@@ -46,6 +46,8 @@ app.post('/compare', async (req, res) => {
         res.status(500).json({ message: 'Error processing the comparison' });
     }
 });
+
+app.use(express.static(path.join(__dirname, 'public'))); // 設置靜態文件夾
 
 // 啟動服務
 app.listen(3000, () => {
