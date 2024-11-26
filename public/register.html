@@ -1,83 +1,60 @@
+<!-- public/register.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>註冊</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="content"></div>
-
+    <h1>註冊帳號</h1>
+    <form id="registerForm">
+        <label for="username">使用者名稱:</label>
+        <input type="text" id="username" required>
+        <label for="password">密碼:</label>
+        <input type="password" id="password" required>
+        <label for="deviceId">裝置 ID:</label>
+        <input type="text" id="deviceId" required>
+        <button type="submit">註冊</button>
+    </form>
     <script>
-        const token = localStorage.getItem('token');
-
-        function showRegistrationForm() {
-            document.getElementById('content').innerHTML = `
-                <h1>Register</h1>
-                <form id="register-form">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required>
-                    <br>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
-                    <br>
-                    <button type="submit">Register</button>
-                </form>
-            `;
-
-            document.getElementById('register-form').addEventListener('submit', function(event) {
-                event.preventDefault();
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-
-                fetch('http://localhost:3000/register', {
+        document.addEventListener("deviceready", onDeviceReady, false);
+        function onDeviceReady() {
+            // Check if the device plugin is available
+            if (window.device) {
+                // Get the IMEI (this might require additional permissions)
+                var imei = device.serial; // Note: This might not be the actual IMEI, but a unique identifier
+                console.log("Device IMEI: " + imei);
+            } else {
+                console.log("Device plugin not available.");
+            }
+            return imei;
+        }
+        //進入網頁後自動取得裝置 ID並填入devicedId欄位
+        document.getElementById('deviceId').value = onDeviceReady();
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const deviceId = document.getElementById('deviceId').value;
+            try {
+                const response = await fetch('http://localhost:3000/register', {
                     method: 'POST',
-                    headers: {
-                        // 設定post中帶的格式為json
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                    // post所帶的資料，這邊是username和password，用JSON.stringify轉成json格式
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.token) {
-                        localStorage.setItem('token', data.token);//將token存入本地端(其實就是cookie)
-                        alert('Registration successful!');
-                    } else {
-                        alert(data.error);
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-
-        function verifyToken() {
-            fetch('http://localhost:3000/verify-token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ token })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    alert('Welcome back, ' + data.user + '!');
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, deviceId })
+                });
+                if (response.ok) {
+                    alert('註冊成功！請登入');
+                    window.location.href = 'login.html';
                 } else {
-                    localStorage.removeItem('token');
-                    showRegistrationForm();
+                    const error = await response.text();
+                    alert('註冊失敗：' + error);
                 }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        //確認是否有註冊過(有無token)
-        if (token) {
-            verifyToken();
-        } else {
-            showRegistrationForm();
-        }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('註冊失敗');
+            }
+        });
     </script>
 </body>
 </html>
