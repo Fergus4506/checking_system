@@ -1,46 +1,43 @@
+<!-- public/login.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>登入</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Login</h1>
-    <form id="login-form">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <button type="submit">Login</button>
+    <h1>登入帳號</h1>
+    <form id="loginForm">
+        <label for="username">使用者名稱:</label>
+        <input type="text" id="username" required>
+        <label for="password">密碼:</label>
+        <input type="password" id="password" required>
+        <button type="submit">登入</button>
     </form>
     <script>
-        document.getElementById('login-form').addEventListener('submit', function(event) {
-            event.preventDefault();
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-
-            fetch('http://localhost:3000/login', {
-                method: 'POST',
-                headers: {
-                    // 設定post中帶的格式為json
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username, password })
-                // post所帶的資料，這邊是username和password，用JSON.stringify轉成json格式
-            })
-            .then(response => response.json())//將回傳的資料轉成json格式
-            .then(data => {
-                if (data.token) {
+            try {
+                const response = await fetch('http://localhost:3000/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (response.ok) {
+                    const data = await response.json();
                     localStorage.setItem('token', data.token);
-                    alert('Login successful!');
+                    alert('登入成功！');
+                    window.location.href = 'check-course.html';
                 } else {
-                    alert(data.error);
+                    alert('登入失敗');
                 }
-            })
-            .catch(error => console.error('Error:', error));
+            } catch (error) {
+                console.error('Error:', error);
+                alert('登入失敗');
+            }
         });
     </script>
 </body>

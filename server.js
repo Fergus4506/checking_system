@@ -2,7 +2,6 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
@@ -12,8 +11,8 @@ const SECRET_KEY = '5000';
 app.set('view engine', 'ejs');
 
 // 解析 JSON 和 URL-encoded 請求
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));// 處理 base64 圖像數據
 
 // 提供靜態文件
 app.use(express.static(path.join(__dirname, 'public')));
@@ -23,90 +22,28 @@ const users = [];
 
 // 註冊使用者
 app.post('/register', (req, res) => {
-    const { username, password } = req.body;
-    const existingUser = users.find(user => user.username === username);
+    const { username, phone } = req.body;
 
-    if (existingUser) {
-        return res.status(400).json({ error: 'Username already exists' });
-    }
+    users.push({ username, phone });
 
-    users.push({ username, password });
-
-    // 利用JWT對SECRET_KEY進行加密，並設定過期時間為1小時
-    const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
-
-    res.json({ message: 'User registered successfully', token });
+    // 利用JWT對SECRET_KEY進行加密
+    const token = jwt.sign({ username }, SECRET_KEY);
+    users.push({ username, phone});
+    // 將token回傳
+    res.json({ token });
 });
-
-// 驗證使用者的 JWT Token
-app.post('/verify-token', (req, res) => {
+app.post('/check', (req, res) => {
     const { token } = req.body;
-
-    if (!token) {
-        return res.status(401).json({ error: 'No token provided' });
-    }
-
-    jwt.verify(token, SECRET_KEY, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ error: 'Invalid token' });
-        }
-
-        res.json({ message: 'Token is valid', user: decoded.username });
-    });
-});
-
-// 渲染後台管理頁面
-app.get('/admin', (req, res) => {
-    res.render('admin');
-});
-
-// 處理生成 HTML 文件的請求
-app.post('/generate', (req, res) => {
-    const { title, content, fileName } = req.body;
-
-    // 動態生成的 HTML 內容
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${title}</title>
-    </head>
-    <body>
-        <h1>${title}</h1>
-        <p>${content}</p>
-    </body>
-    </html>
-    `;
-
-    // 將 HTML 寫入檔案
-    const filePath = path.join(__dirname, 'public', 'generated-html', `${fileName}.html`);
-    fs.writeFile(filePath, htmlContent, (err) => {
-        if (err) {
-            console.error('Error writing file:', err);
-            return res.status(500).send('Error generating HTML file');
-        }
-        res.redirect('/admin');
-    });
-});
-
-// 處理刪除 HTML 文件的請求
-app.post('/delete', (req, res) => {
-    const { fileName } = req.body;
-    const filePath = path.join(__dirname, 'public', 'generated-html', `${fileName}.html`);
-
-    // 檢查檔案是否存在
-    if (fs.existsSync(filePath)) {
-        fs.unlink(filePath, (err) => {
-            if (err) {
-                console.error('Error deleting file:', err);
-                return res.status(500).send('Error deleting HTML file');
-            }
-            res.redirect('/admin');
-        });
+    console.log(token);
+    //對token進行解密並去確認是否在users裡面
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const user = users.find(user => user.username === decoded.username);
+    console.log(user);
+    //如果有找到就回傳該使用者的資料
+    if (user) {
+        res.json({message: 'success'});
     } else {
-        res.status(404).send('File not found');
+        res.status(401).json({ message: 'Invalid token' });
     }
 });
 
