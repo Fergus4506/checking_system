@@ -13,35 +13,18 @@
         <input type="text" id="username" required>
         <label for="password">密碼:</label>
         <input type="password" id="password" required>
-        <label for="deviceId">裝置 ID:</label>
-        <input type="text" id="deviceId" required>
         <button type="submit">註冊</button>
     </form>
     <script>
-        document.addEventListener("deviceready", onDeviceReady, false);
-        function onDeviceReady() {
-            // Check if the device plugin is available
-            if (window.device) {
-                // Get the IMEI (this might require additional permissions)
-                var imei = device.serial; // Note: This might not be the actual IMEI, but a unique identifier
-                console.log("Device IMEI: " + imei);
-            } else {
-                console.log("Device plugin not available.");
-            }
-            return imei;
-        }
-        //進入網頁後自動取得裝置 ID並填入devicedId欄位
-        document.getElementById('deviceId').value = onDeviceReady();
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const deviceId = document.getElementById('deviceId').value;
             try {
                 const response = await fetch('http://localhost:3000/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password, deviceId })
+                    body: JSON.stringify({ username, password })
                 });
                 if (response.ok) {
                     alert('註冊成功！請登入');
