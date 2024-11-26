@@ -10,10 +10,6 @@ const SECRET_KEY = '5000';
 // 設置 EJS 為模板引擎
 app.set('view engine', 'ejs');
 
-// 解析 JSON 和 URL-encoded 請求
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));// 處理 base64 圖像數據
-
 // 提供靜態文件
 app.use(express.static(path.join(__dirname, 'public')));
 
