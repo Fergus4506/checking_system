@@ -9,26 +9,39 @@ const SECRET_KEY = '5000';
 
 // 設置 EJS 為模板引擎
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// 解析 JSON 和 URL-encoded 請求
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // 處理 base64 圖像數據
 
 // 提供靜態文件
 app.use(express.static(path.join(__dirname, 'public')));
 
 // 模擬的使用者資料庫
 const users = [];
-const courses=[];
+
+// 模擬的課程資料庫
+const courses = [
+    { id: 1, name: 'JavaScript 入門課程', description: '學習 JavaScript 的基礎知識', participants: [] },
+    { id: 2, name: 'Node.js 進階課程', description: '深入了解 Node.js 的高級功能', participants: [] },
+    // 可以添加更多課程
+];
 
 // 註冊使用者
 app.post('/register', (req, res) => {
-    const { username, phone } = req.body;
+    const { username, phone,id } = req.body;
 
     users.push({ username, phone });
-
+    const course = courses.find(c => c.id === id);  // 找到該課程
+    course.participants.push({ username, phone });  // 將使用者加入該課程的參與者中
     // 利用JWT對SECRET_KEY進行加密
     const token = jwt.sign({ username }, SECRET_KEY);
-    users.push({ username, phone});
     // 將token回傳
     res.json({ token });
 });
+
+// 檢查使用者
 app.post('/check', (req, res) => {
     const { token } = req.body;
     console.log(token);
@@ -41,6 +54,46 @@ app.post('/check', (req, res) => {
         res.json({message: 'success'});
     } else {
         res.status(401).json({ message: 'Invalid token' });
+    }
+});
+
+// 動態生成課程頁面
+app.get('/course/:id', (req, res) => {
+    const courseId = parseInt(req.params.id, 10);
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+        res.render('course', { course });
+    } else {
+        res.status(404).send('課程未找到');
+    }
+});
+
+// 新增課程頁面
+app.get('/add-course', (req, res) => {
+    res.render('add-course',{courses});
+});
+
+// 處理新增課程的請求
+app.post('/add-course', (req, res) => {
+    const { name, description } = req.body;
+    const newCourse = {
+        id: courses.length + 1,
+        name,
+        description,
+        participants: []
+    };
+    courses.push(newCourse);
+    res.redirect(`/add-course`);
+});
+
+// 管理者頁面
+app.get('/admin/course/:id', (req, res) => {
+    const courseId = parseInt(req.params.id, 10);
+    const course = courses.find(c => c.id === courseId);
+    if (course) {
+        res.render('admin-course', { course });
+    } else {
+        res.status(404).send('課程未找到');
     }
 });
 

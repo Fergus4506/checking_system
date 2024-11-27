@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增課程</title>
+</head>
+<body>
+    <h1>新增課程</h1>
+    <form action="/add-course" method="POST">
+        <label for="name">課程名稱:</label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="description">課程描述:</label>
+        <textarea id="description" name="description" required></textarea>
+        <br>
+        <button type="submit">新增課程</button>
+    </form>
+    <!--顯示目前的所有課程-->
+    <h2>目前的所有課程</h2>
+    <ul>
+        <% courses.forEach(course => { %>
+            <li><%= course.name %> - <%= course.description %></li>
+        <% }) %>
+    </ul>
+</body>
+</html>

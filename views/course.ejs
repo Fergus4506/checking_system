@@ -16,8 +16,7 @@
                         body: JSON.stringify({ token: cookiePair[1] })
                     });
                     if (response.ok) {
-                        const data = await response.json();
-                        return data.valid;
+                        return true;
                     } else {
                         return false;
                     }
@@ -28,6 +27,7 @@
 
         async function checkCookie() {
             let userCookie = await getCookie("user");
+            console.log(userCookie);
             if (userCookie) {
                 document.getElementById("message").innerText = "簽到成功";
                 document.getElementById("signupForm").style.display = "none";
