@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const path = require('path');
+const QRCode = require('qrcode');
 
 const app = express();
 const PORT = 3000;
@@ -95,6 +96,20 @@ app.get('/admin/course/:id', (req, res) => {
     } else {
         res.status(404).send('課程未找到');
     }
+});
+
+//建立課程的QRcode
+app.get('/course/:id/qrcode', async (req, res) => {
+    try{
+        //抓取相對應課程的URL
+        const courseId = parseInt(req.params.id, 10);
+        const URL = `http://localhost:3000/course/${courseId}`;
+        const qrCodeImage= await QRCode.toDataURL(URL);
+        res.send(`<img src="${qrCodeImage}" alt="QR Code"/>`);
+    }catch(err){
+        console.error(err);
+    }
+
 });
 
 // 啟動伺服器
