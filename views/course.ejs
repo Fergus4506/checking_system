@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= course.name %> 報名頁面</title>
     <script>
+        // 抓取今日年月日
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const date = today.getDate();
+        const todayStr = `${year}-${month}-${date}`;
+        console.log(todayStr);
+        
         async function getCookie(name) {
             let cookieArr = document.cookie.split(";");
             for (let i = 0; i < cookieArr.length; i++) {
@@ -13,7 +21,7 @@
                     const response = await fetch('/check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: cookiePair[1] })
+                        body: JSON.stringify({ token: cookiePair[1] , courseId: "<%= course.id %>"})
                     });
                     if (response.ok) {
                         return true;
@@ -26,8 +34,8 @@
         }
 
         async function checkCookie() {
-            let userCookie = await getCookie("user");
-            console.log(userCookie);
+            let userCookie = await getCookie("cls<%= course.id %>_user");
+            console.log("cls<%= course.id %>_user");
             if (userCookie) {
                 document.getElementById("message").innerText = "簽到成功";
                 document.getElementById("signupForm").style.display = "none";
@@ -59,6 +67,7 @@
             const username = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
             const courseId = document.getElementById('courseId').value;
+            console.log(username, phone, courseId);
             try {
                 const response = await fetch('/register', {
                     method: 'POST',
@@ -70,7 +79,8 @@
                     const token = data.token;
                     document.getElementById("message").innerText = "新參加者報名成功";
                     document.getElementById("signupForm").style.display = "none";
-                    document.cookie = `user=${token}; path=/`;
+                    // 將課程報名的 token 存入 cookie
+                    document.cookie = `cls<%= course.id %>_user=${token}`;
                 } else {
                     const error = await response.text();
                     alert('報名失敗：' + error);

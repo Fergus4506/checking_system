@@ -9,23 +9,46 @@
     <h1><%= course.name %> - 管理頁面</h1>
     <p><%= course.description %></p>
 
+    <h2>課程日期</h2>
+    <ul>
+        <% course.date.forEach(date => { %>
+            <li><%= date %> 餐與人數: <%= course.singInSheet[date] %></li>
+        <% }) %>
+        
+    </ul>
+
+    <!-- 添加新增課程日期 -->
+    
+    <div id="dateAddForm">
+        <h2>新增課程日期</h2>
+        <form>
+            <label for="date">日期:</label>
+            <input type="date" id="date" name="date" required>
+            <input type="hidden" id="courseId" name="courseId" value="<%= course.id %>">
+            <button type="submit">新增課程日期</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById("dateAddForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const date = document.getElementById("date").value;
+            const courseId = document.getElementById("courseId").value;
+            const response = await fetch("/add-course-date", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ date, courseId })
+            });
+            if (response.ok) {
+                location.reload();
+            }
+        });
+    </script>
     <h2>參與名單</h2>
     <ul>
         <% course.participants.forEach(participant => { %>
             <li><%= participant.username %> - <%= participant.phone %></li>
         <% }) %>
     </ul>
-
-    <h2>新增參與者</h2>
-    <form action="/register" method="POST">
-        <label for="username">使用者名稱:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="phone">電話號碼:</label>
-        <input type="text" id="phone" name="phone" required>
-        <br>
-        <button type="submit">新增參與者</button>
-    </form>
 
     <a href="/course/<%= course.id %>">返回課程頁面</a>
 </body>

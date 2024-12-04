@@ -24,37 +24,50 @@ const users = [];
 
 // 模擬的課程資料庫
 const courses = [
-    { id: 1, name: 'JavaScript 入門課程', description: '學習 JavaScript 的基礎知識', participants: [] },
-    { id: 2, name: 'Node.js 進階課程', description: '深入了解 Node.js 的高級功能', participants: [] },
-    // 可以添加更多課程
+    { id: 1, name: 'JavaScript 入門課程', description: '學習 JavaScript 的基礎知識', participants: [] ,date:[],singInSheet:[]},
+    { id: 2, name: 'Node.js 進階課程', description: '深入了解 Node.js 的高級功能', participants: [],date:[] ,singInSheet:[]},
 ];
 
 // 註冊使用者
 app.post('/register', (req, res) => {
-    const { username, phone,id } = req.body;
+    const { username, phone, courseId } = req.body;
+    console.log(username, phone, courseId);
 
-    users.push({ username, phone });
-    const course = courses.find(c => c.id === id);  // 找到該課程
-    course.participants.push({ username, phone });  // 將使用者加入該課程的參與者中
-    // 利用JWT對SECRET_KEY進行加密
-    const token = jwt.sign({ username }, SECRET_KEY);
-    // 將token回傳
+    // 確保 courseId 是數字
+    const courseIdNumber = parseInt(courseId, 10);
+
+    // 找到對應的課程
+    const course = courses.find(c => c.id === courseIdNumber);
+    if (!course) {
+        return res.status(404).json({ message: '課程未找到' });
+    }
+    // 將使用者加入到課程的參與者列表中
+    course.participants.push({ username, phone });
+
+    // 利用 courseId 作為 SECRET_KEY 的一部分進行加密
+    const token = jwt.sign({ username }, SECRET_KEY + courseIdNumber.toString().padStart(8, '0'));
+
+    // 將 token 回傳
     res.json({ token });
 });
 
 // 檢查使用者
 app.post('/check', (req, res) => {
-    const { token } = req.body;
+    const { token ,courseId} = req.body;
+    console.log(courseId);
     console.log(token);
-    //對token進行解密並去確認是否在users裡面
-    const decoded = jwt.verify(token, SECRET_KEY);
-    const user = users.find(user => user.username === decoded.username);
-    console.log(user);
-    //如果有找到就回傳該使用者的資料
-    if (user) {
-        res.json({message: 'success'});
-    } else {
-        res.status(401).json({ message: 'Invalid token' });
+
+    // 確保 courseId 是數字
+    const courseIdNumber = parseInt(courseId, 10);
+    // 找到對應的課程
+    const course = courses.find(c => c.id === courseIdNumber);
+    if (!course) {
+        return res.status(404).json({ message: '課程未找到' });
+    }else{
+        //對token進行解密並去確認是否在users裡面
+        const decoded = jwt.verify(token, SECRET_KEY + courseIdNumber.toString().padStart(8, '0'));
+        const user = users.find(user => user.username === decoded.username);
+        
     }
 });
 
@@ -81,7 +94,9 @@ app.post('/add-course', (req, res) => {
         id: courses.length + 1,
         name,
         description,
-        participants: []
+        participants: [],
+        date:[],
+        singInSheet:[]
     };
     courses.push(newCourse);
     res.redirect(`/add-course`);
@@ -97,6 +112,23 @@ app.get('/admin/course/:id', (req, res) => {
         res.status(404).send('課程未找到');
     }
 });
+
+// 新增上課時間
+app.post('/add-course-date', (req, res) => {
+    const { courseId,date } = req.body;
+    const id = parseInt(courseId, 10);
+    const course = courses.find(c => c.id === id);
+    if (course) {
+        course.date.push(date);
+        course.singInSheet.push({[date]:[]});
+        console.log(course);
+        res.redirect(`/admin/course/${courseId}`);
+    } else {
+        res.status(404).send('課程未找到');
+    }
+});
+
+
 
 //建立課程的QRcode
 app.get('/course/:id/qrcode', async (req, res) => {
