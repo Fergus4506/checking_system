@@ -119,16 +119,51 @@ app.post('/add-course-date', (req, res) => {
     const id = parseInt(courseId, 10);
     const course = courses.find(c => c.id === id);
     if (course) {
-        course.date.push(date);
-        course.singInSheet.push({[date]:[]});
-        console.log(course);
-        res.redirect(`/admin/course/${courseId}`);
+        if(course.date.includes(date)){
+            return res.status(404).send('日期重複');
+        }else{
+            course.date.push(date);
+            course.singInSheet.push({username:[],check_time:[]});
+            console.log(course.singInSheet);
+            console.log(course.singInSheet[date.indexOf(date)]);
+            res.redirect(`/admin/course/${courseId}`);
+        }
+        
+    } else {
+        res.status(404).send('課程未找到');
+    }
+});
+app.post('/edit-course-date', (req, res) => {
+    const { courseId,date,editDate } = req.body;
+    const id = parseInt(courseId, 10);
+    const course = courses.find(c => c.id === id);
+    if (course) {
+        if(course.date.includes(editDate)){
+            return res.status(404).send('日期重複');
+        }else{
+            course.date[date.indexOf(date)] = editDate;
+            console.log(course);
+            res.redirect(`/admin/course/${courseId}`);
+        }
+        
     } else {
         res.status(404).send('課程未找到');
     }
 });
 
-
+// 刪除上課時間
+app.post('/delete-course-date', (req, res) => {
+    const { courseId,date } = req.body;
+    const id = parseInt(courseId, 10);
+    const course = courses.find(c => c.id === id);
+    if (course) {
+        course.date.splice(date,1);
+        course.singInSheet.splice(date,1);
+        res.redirect(`/admin/course/${courseId}`);
+    } else {
+        res.status(404).send('課程未找到');
+    }
+});
 
 //建立課程的QRcode
 app.get('/course/:id/qrcode', async (req, res) => {

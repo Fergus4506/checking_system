@@ -11,11 +11,55 @@
 
     <h2>課程日期</h2>
     <ul>
-        <% course.date.forEach(date => { %>
-            <li><%= date %> 餐與人數: <%= course.singInSheet[date] %></li>
+        <% course.date.forEach((date, index) => { %>
+            <li>
+                <%= date %> 參與人數: <%= course.singInSheet[index].username.length %>
+                <button onclick="editDate('<%= date %>', <%= index %>)">修改</button>
+                <button onclick="deleteDate('<%= date %>', <%= index %>)">刪除</button>
+            </li>
+            <ul>
+                <% if (course.singInSheet[index].length > 0) { %>
+                    <% course.singInSheet[index].forEach(participant => { %>
+                        <li><%= participant.username %>/簽到時間<%= participant.check_time %></li>
+                    <% }) %>
+                <% } else { %>
+                    <li>無人簽到</li>
+                <% } %>
+            </ul>
         <% }) %>
-        
     </ul>
+
+    <script>
+        function editDate(date, index) {
+            console.log(date, index);
+            const newDate = prompt("請輸入新的日期:", date);
+            if (newDate) {
+                fetch("/edit-course-date", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.id %>", index })
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        function deleteDate(date, index) {
+            if (confirm("確定要刪除此日期嗎?")) {
+                fetch("/delete-course-date", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ date, courseId: "<%= course.id %>", index })
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    </script>
 
     <!-- 添加新增課程日期 -->
     
