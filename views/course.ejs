@@ -19,16 +19,27 @@
             for (let i = 0; i < cookieArr.length; i++) {
                 let cookiePair = cookieArr[i].split("=");
                 if (name == cookiePair[0].trim()) {
-                    const response = await fetch('/check', {
+                    try{
+                        const response = await fetch('/check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: cookiePair[1].trim(), courseId: "<%= course.id %>", date: today, check_time: check_time })
-                    });
-                    if (response.ok) {
-                        return true;
-                    } else {
-                        return false;
+                        });
+                        if (response.ok) {
+                            return true;
+                        } else if (response.status ==404 && response.json().message =="已經簽到過了"){
+                            return '已經簽到過了';
+                        }else if (response.status ==404 && response.json().message =="還未到簽到時間"){
+                            return '還未到簽到時間';
+                        }else if(response.status ==404 && response.json().message =="使用者未找到"){
+                            return '使用者未找到';
+                        }else{
+                            return false;
+                        }
+                    }catch(error){
+                        console.log(error);
                     }
+                    
                 }
             }
             return null;
@@ -37,12 +48,21 @@
         async function checkCookie() {
             let userCookie = await getCookie("user");
             console.log(userCookie);
-            if (userCookie) {
+            if (userCookie==true) {
                 document.getElementById("message").innerText = "簽到成功";
                 document.getElementById("signupForm").style.display = "none";
             } else if (userCookie == null){
                 document.getElementById("message").innerText = "";
                 document.getElementById("signupForm").style.display = "block";
+            }else if(userCookie == '已經簽到過了'){
+                document.getElementById("message").innerText = "已經簽到過了";
+                document.getElementById("signupForm").style.display = "none";
+            }else if(userCookie == '還未到簽到時間'){
+                document.getElementById("message").innerText = "還未到簽到時間";
+                document.getElementById("signupForm").style.display = "none";
+            }else if(userCookie == '使用者未找到'){
+                //跳出提示視窗
+                alert("使用者未找到");
             }else{
                 document.getElementById("message").innerText = "";
                 document.getElementById("signupForm").style.display = "block";
