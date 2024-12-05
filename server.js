@@ -30,9 +30,10 @@ const courses = [
 
 // 註冊使用者
 app.post('/register', (req, res) => {
-    const { username, phone, courseId } = req.body;
+    console.log(req.body);
+    const { username, phone, courseId ,date,check_time} = req.body;
     console.log(username, phone, courseId);
-
+    console.log(date);
     // 確保 courseId 是數字
     const courseIdNumber = parseInt(courseId, 10);
 
@@ -43,7 +44,11 @@ app.post('/register', (req, res) => {
     }
     // 將使用者加入到課程的參與者列表中
     course.participants.push({ username, phone });
-
+    const checkdate=course.date.indexOf(date);
+    if (checkdate!=-1){
+        course.singInSheet[checkdate].username.push(username);
+        course.singInSheet[checkdate].check_time.push(check_time);
+    }
     // 利用 courseId 作為 SECRET_KEY 的一部分進行加密
     const token = jwt.sign({ username }, SECRET_KEY + courseIdNumber.toString().padStart(8, '0'));
 
@@ -53,21 +58,43 @@ app.post('/register', (req, res) => {
 
 // 檢查使用者
 app.post('/check', (req, res) => {
-    const { token ,courseId} = req.body;
+    const { token ,courseId,date,check_time} = req.body;
     console.log(courseId);
     console.log(token);
+    console.log(date);
 
     // 確保 courseId 是數字
     const courseIdNumber = parseInt(courseId, 10);
     // 找到對應的課程
     const course = courses.find(c => c.id === courseIdNumber);
     if (!course) {
+        console.log('課程未找到');
         return res.status(404).json({ message: '課程未找到' });
     }else{
         //對token進行解密並去確認是否在users裡面
         const decoded = jwt.verify(token, SECRET_KEY + courseIdNumber.toString().padStart(8, '0'));
-        const user = users.find(user => user.username === decoded.username);
-        
+        const user = course.participants.find(p => p.username === decoded.username);
+        if(user){
+            const checkdate = course.date.findIndex(d => d === date);
+            console.log(checkdate);
+            if (checkdate!=-1){
+                if(course.singInSheet[checkdate].username.includes(decoded.username)){
+                    console.log('已經簽到過了');
+                    return res.status(404).json({ message: '已經簽到過了' });
+                }else{
+                    console.log('簽到成功');
+                    course.singInSheet[checkdate].username.push(decoded.username);
+                    course.singInSheet[checkdate].check_time.push(check_time);
+                    return res.json({ message: '簽到成功' });
+                }
+            }else{
+                console.log('還未到簽到時間');
+                return res.status(404).json({ message: '還未到簽到時間' });
+            }
+        }else{
+            console.log('使用者未找到');
+            return res.status(404).json({ message: '使用者未找到' });
+        }
     }
 });
 
@@ -123,6 +150,7 @@ app.post('/add-course-date', (req, res) => {
             return res.status(404).send('日期重複');
         }else{
             course.date.push(date);
+            console.log(typeof date);
             course.singInSheet.push({username:[],check_time:[]});
             console.log(course.singInSheet);
             console.log(course.singInSheet[date.indexOf(date)]);

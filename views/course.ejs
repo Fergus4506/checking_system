@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= course.name %> 報名頁面</title>
     <script>
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = String(date.getDate()).padStart(2, '0');
+        const hour = date.getHours();
+        const minute = date.getMinutes();
+        const second = date.getSeconds();
+        const today = `${year}-${month}-${day}`;
+        const check_time = `${hour}:${minute}:${second}`;
         async function getCookie(name) {
             let cookieArr = document.cookie.split(";");
             for (let i = 0; i < cookieArr.length; i++) {
@@ -13,7 +22,7 @@
                     const response = await fetch('/check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: cookiePair[1] })
+                        body: JSON.stringify({ token: cookiePair[1].trim(), courseId: "<%= course.id %>", date: today, check_time: check_time })
                     });
                     if (response.ok) {
                         return true;
@@ -31,7 +40,10 @@
             if (userCookie) {
                 document.getElementById("message").innerText = "簽到成功";
                 document.getElementById("signupForm").style.display = "none";
-            } else {
+            } else if (userCookie == null){
+                document.getElementById("message").innerText = "";
+                document.getElementById("signupForm").style.display = "block";
+            }else{
                 document.getElementById("message").innerText = "";
                 document.getElementById("signupForm").style.display = "block";
             }
@@ -63,7 +75,7 @@
                 const response = await fetch('/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, phone, courseId })
+                    body: JSON.stringify({ username, phone, courseId, date: today, check_time: check_time})
                 });
                 if (response.ok) {
                     const data = await response.json();
