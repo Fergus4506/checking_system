@@ -74,8 +74,9 @@ app.get('/add-course', async (req, res) => {
     try {
         // 取得所有課程
         const courses = await Course.findAll();
-        console.log("以下為輸出測試");
-        console.log(courses);
+        console.log("-----------------");
+        console.log("新增一門課程");
+        console.log("courses:"+courses);
         res.render('add-course', { courses });
     } catch (error) {
         console.error('取得課程失敗：', error);
@@ -83,7 +84,7 @@ app.get('/add-course', async (req, res) => {
     }
 });
 
-// 1. 新增課程
+//新增課程
 app.post('/add-course', async (req, res) => {
     const { name, description } = req.body;
     try {
@@ -95,7 +96,7 @@ app.post('/add-course', async (req, res) => {
     }
 });
 
-// 2. 註冊使用者
+// 註冊參加者
 app.post('/register', async (req, res) => {
     const { username, phone, courseId } = req.body;
     try {
@@ -111,7 +112,7 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// 3. 簽到檢查
+// 簽到檢查
 app.post('/check', async (req, res) => {
     const { token, courseId, date, check_time } = req.body;
     console.log("token:"+token);
@@ -121,13 +122,13 @@ app.post('/check', async (req, res) => {
         const participant = await Participant.findOne({ where: { course_id: courseId, username: decoded.username } });
         if (!participant){
             console.log('使用者未找到');
-            return res.status(404).json({ message: '使用者未找到' });
+            return res.status(200).json({ message: '使用者未找到' });
         }
         
         const courseDate = await CourseDate.findOne({ where: { course_id: courseId, date } });
         if (!courseDate){
             console.log('還未到簽到時間');
-            return res.status(404).json({ message: '還未到簽到時間' });
+            return res.status(200).json({ message: '還未到簽到時間' });
         } 
 
         const alreadySignedIn = await SignInSheet.findOne({ where: { course_date_id: courseDate.id, username: decoded.username } });
@@ -150,7 +151,7 @@ app.post('/check', async (req, res) => {
     }
 });
 
-// 4. 新增日期
+// 新增日期課程日期
 app.post('/add-course-date', async (req, res) => {
     const { courseId, date } = req.body;
     try {
@@ -168,7 +169,72 @@ app.post('/add-course-date', async (req, res) => {
     }
 });
 
-// 5. 管理者課程頁面
+// 修改課程日期
+app.post('/edit-course-date', async (req, res) => {
+    const { courseId, oldDate, newDate } = req.body;
+    console.log(oldDate,newDate);
+    try {
+        const course = await Course.findByPk(courseId, {
+            include: [CourseDate]
+        });
+        if (!course) {
+            return res.status(404).send('課程未找到');
+        }
+
+        const existingDate = await CourseDate.findOne({ where: { course_id: courseId, date: newDate } });
+        if (existingDate) {
+            return res.status(400).send('日期重複');
+        }
+
+        const courseDate = await CourseDate.findOne({ where: { course_id: courseId, date:oldDate } });
+        if (!courseDate) {
+            return res.status(404).send('日期未找到');
+        }
+
+        courseDate.date = newDate;
+        await courseDate.save();
+
+        console.log(course);
+        res.redirect(`/admin/course/${courseId}`);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('更新日期失敗');
+    }
+});
+
+// 刪除課程日期
+app.post('/delete-course-date', async (req, res) => {
+    const { courseId, date } = req.body;
+    try {
+        const course = await Course.findByPk(courseId, {
+            include: [CourseDate]
+        });
+
+        if (!course) {
+            return res.status(404).send('課程未找到');
+        }
+
+        const courseDate = await CourseDate.findOne({ where: { course_id: courseId, date } });
+        if (!courseDate) {
+            return res.status(404).send('日期未找到');
+        }
+
+        if (course) {
+            const courseDate = await CourseDate.findOne({ where: { course_id: courseId, date } });
+            if (courseDate) {
+            await SignInSheet.destroy({ where: { course_date_id: courseDate.id } });
+            }
+        }
+
+        await courseDate.destroy();
+        res.redirect(`/admin/course/${courseId}`);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('刪除日期失敗');
+    }
+});
+
+// 管理者課程頁面
 app.get('/admin/course/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -181,7 +247,7 @@ app.get('/admin/course/:id', async (req, res) => {
                 Participant
             ],
         });
-        console.log(course.toJSON());
+        const courseData = course.toJSON();
         if (!course) return res.status(404).send('課程未找到');
         res.render('admin-course_sql', { course });
     } catch (error) {

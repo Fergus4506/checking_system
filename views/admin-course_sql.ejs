@@ -13,36 +13,40 @@
     <ul>
         <% course.CourseDates.forEach((date, index) => { %>
             <li>
-                <%= date.date %> 參與人數: <%= course.Participants.length %>
-                <button onclick="editDate('<%= date %>', <%= index %>)">修改</button>
-                <button onclick="deleteDate('<%= date %>', <%= index %>)">刪除</button>
+                <%= date.date %> 參與人數: <%= date.SignInSheets.length %>
+                <button onclick="editDate('<%= date.date %>')">修改</button>
+                <button onclick="deleteDate('<%= date.date %>')">刪除</button>
             </li>
         <% }) %>
     </ul>
 
     <script>
-        function editDate(date, index) {
-            console.log(date, index);
+        function editDate(date) {
+            console.log(date);
             const newDate = prompt("請輸入新的日期:", date);
-            if (newDate) {
+            try{
+                if (newDate) {
                 fetch("/edit-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.id %>", index })
+                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.id %>" })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
                     }
                 });
             }
+            }catch(error){
+                alert(error);
+            }
         }
 
-        function deleteDate(date, index) {
+        function deleteDate(date) {
             if (confirm("確定要刪除此日期嗎?")) {
                 fetch("/delete-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ date, courseId: "<%= course.id %>", index })
+                    body: JSON.stringify({ date, courseId: "<%= course.id %>"})
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
