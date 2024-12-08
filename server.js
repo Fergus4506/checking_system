@@ -19,9 +19,6 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // 處理 bas
 // 提供靜態文件
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 模擬的使用者資料庫
-const users = [];
-
 // 模擬的課程資料庫
 const courses = [
     { id: 1, name: 'JavaScript 入門課程', description: '學習 JavaScript 的基礎知識', participants: [] ,date:[],singInSheet:[]},

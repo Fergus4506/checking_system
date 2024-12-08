@@ -8,7 +8,11 @@
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.1",
+    "mysql2": "^3.11.5",
     "path": "^0.12.7",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "sequelize": "^6.37.5",
+    "sequelize-cli": "^6.6.2",
+    "sqlite3": "^5.1.7"
   }
 }

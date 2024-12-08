@@ -1,0 +1,9 @@
+{
+  "development": {
+    "username": "root",
+    "password": "Fergus5211",
+    "database": "courses_app",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}

@@ -25,16 +25,17 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: cookiePair[1].trim(), courseId: "<%= course.id %>", date: today, check_time: check_time })
                         });
-                        if (response.ok) {
-                            return true;
-                        } else if (response.status ==404 && response.json().message =="已經簽到過了"){
-                            return '已經簽到過了';
-                        }else if (response.status ==404 && response.json().message =="還未到簽到時間"){
-                            return '還未到簽到時間';
-                        }else if(response.status ==404 && response.json().message =="使用者未找到"){
-                            return '使用者未找到';
-                        }else{
-                            return false;
+                        if(response.ok){
+                            data = await response.json();
+                            console.log(data);
+                            if(data.message == "簽到成功")
+                                return true;
+                            else if(data.message == "已經簽到過了")
+                                return '已經簽到過了';
+                            else if(data.message == "還未到簽到時間")
+                                return '還未到簽到時間';
+                            else if(data.message == "使用者未找到")
+                                return '使用者未找到';
                         }
                     }catch(error){
                         console.log(error);
