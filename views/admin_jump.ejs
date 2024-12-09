@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Redirect</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Function to get cookies
+            function getCookies() {
+            let cookies = {};
+            document.cookie.split(';').forEach(function(cookie) {
+                let [name, value] = cookie.split('=');
+                cookies[name.trim()] = value;
+            });
+            return cookies;
+            }
+
+            // Get cookies and redirect to admin control page
+            let cookies = getCookies();
+            let adminToken = cookies['admin_token']; // Assuming the token is stored in a cookie named 'admin_token'
+            let adminUrl = '/admin/control'; // Change this to your admin control page URL
+            fetch(adminUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: adminToken })
+            }).then(response => {
+                if (response.ok) {
+                    response.json().then(data => {
+                        if (data.success) {
+                            window.location.href = `/admin/control?admin=${data.admin}&courses=${data.courses}`;
+                        } else {
+                            console.error('Failed to redirect:', data.message);
+                        }
+                    });
+                } 
+            });
+        });
+    </script>
+</head>
+<body>
+    <p>正在轉址中...</p>
+</body>
+</html>

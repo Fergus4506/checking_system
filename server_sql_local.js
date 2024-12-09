@@ -33,6 +33,16 @@ const SignInSheet = sequelize.define('SignInSheet', {
     username: { type: DataTypes.STRING, allowNull: false },
 });
 
+// 定義管理者模型
+const Admin = sequelize.define('Admin', {
+    username: { type: DataTypes.STRING, allowNull: false, unique: true },
+    password: { type: DataTypes.STRING, allowNull: false },
+});
+
+// 課程模型新增關聯
+Course.belongsTo(Admin, { foreignKey: 'admin_id', as: 'publisher' });
+Admin.hasMany(Course, { foreignKey: 'admin_id', as: 'publishedCourses' });
+
 // 設定模型關聯
 Course.hasMany(CourseDate, { foreignKey: 'course_id' });
 CourseDate.belongsTo(Course, { foreignKey: 'course_id' });
@@ -71,9 +81,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // 新增課程頁面
 app.get('/add-course', async (req, res) => {
+    const token = req.headers.authorization.split(' ')[1];
     try {
-        // 取得所有課程
-        const courses = await Course.findAll();
+        // 取得所有該管理者所建立的課程
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const admin = await Admin.findOne({ where: { username: decoded.username } });
+        if (!admin) {
+            return res.status(404).send('管理者未找到');
+        }
+        const courses = await Course.findAll({ where: { admin_id: admin.id } });
         console.log("-----------------");
         console.log("新增一門課程");
         console.log("courses:"+courses);
@@ -86,14 +102,21 @@ app.get('/add-course', async (req, res) => {
 
 //新增課程
 app.post('/add-course', async (req, res) => {
-    const { name, description } = req.body;
+    const { name, description,token } = req.body;
+    const decoded = jwt.verify(token, SECRET_KEY);
     try {
-        await Course.create({ name, description });
+        const admin = await Admin.findOne({ where: { username: decoded.username } });
+        if (!admin) {
+            return res.status(404).send('管理者未找到');
+        }
+        await Course.create({ name, description, admin_id: admin.id });
         res.redirect('/add-course');
     } catch (error) {
         console.error(error);
         res.status(500).send('新增課程失敗');
     }
+    
+    
 });
 
 // 註冊參加者
@@ -254,6 +277,50 @@ app.get('/admin/course/:id', async (req, res) => {
         console.error(error);
         res.status(500).send('無法載入管理頁面');
     }
+});
+
+// 管理者登入
+app.post('/admin/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const admin = await Admin.findOne({ where: { username, password } });
+        if (!admin) return res.status(401).send('登入失敗');
+
+        const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ token });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('登入失敗');
+    }
+});
+
+//管理者註冊
+app.post('/admin/register', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        await Admin.create({ username, password });
+        res.redirect('/admin/login');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('註冊失敗');
+    }
+});
+
+app.get('/admin/login', async (req, res) => {
+    res.render('admin-login_sql');
+});
+
+
+// 管理者登入後的頁面
+app.get('/admin', async (req, res) => {
+    const token = req.query.token || req.headers['authorization']?.split(' ')[1];
+    const decoded = jwt.verify(token, SECRET_KEY);
+    const admin = await Admin.findOne({ where: { username: decoded.username } });
+    if (!admin) return res.status(401).send('未授權');
+    console.log("正確進入管理者頁面");
+    const courses = await Course.findAll({ where: { admin_id: admin.id } });
+    console.log(courses);
+    res.render('admin_sql',{admin,courses});
 });
 
 // 動態生成課程頁面

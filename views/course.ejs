@@ -47,7 +47,7 @@
         }
 
         async function checkCookie() {
-            let userCookie = await getCookie("user");
+            let userCookie = await getCookie("<%= course.name %>");
             console.log(userCookie);
             if (userCookie==true) {
                 document.getElementById("message").innerText = "簽到成功";
@@ -103,7 +103,7 @@
                     const token = data.token;
                     document.getElementById("message").innerText = "新參加者報名成功";
                     document.getElementById("signupForm").style.display = "none";
-                    document.cookie = `user=${token}; path=/`;
+                    document.cookie = `<%= course.name %>=${token}; path=/`;
                 } else {
                     const error = await response.text();
                     alert('報名失敗：' + error);
