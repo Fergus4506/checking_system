@@ -3,41 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= course.name %> - 管理頁面</title>
+    <title id="title_admin"></title>
 </head>
 <body>
-    <h1><%= course.name %> - 管理頁面</h1>
-    <p><%= course.description %></p>
-
-    <h2>課程日期</h2>
-    <ul>
-        <% course.CourseDates.forEach((date, index) => { %>
-            <li>
-                <%= date.date %> 參與人數: <%= date.SignInSheets.length %>
-                <button onclick="editDate('<%= date.date %>')">修改</button>
-                <button onclick="deleteDate('<%= date.date %>')">刪除</button>
-            </li>
-        <% }) %>
-    </ul>
-
     <script>
+        console.log(document.cookie);
+        async function getCookie(name) {
+            let cookieArr = document.cookie.split(";");
+            for (let i = 0; i < cookieArr.length; i++) {
+                let cookiePair = cookieArr[i].split("=");
+                if (name == cookiePair[0].trim()) {
+                    try {
+                        const response = await fetch('/admin', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: cookiePair[1].trim() })
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(data);
+                            return data;
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                }
+            }
+            return null;
+        }
+
+        async function fetchCourseData() {
+            const content = await getCookie('admin_token');
+            if (content) {
+                console.log(content.admin.username)
+                document.getElementById('title_admin').innerText = content.admin.username + ' - 管理頁面';
+                document.querySelector('h1').innerText = `${content.course.name} - 管理頁面`;
+                document.querySelector('p').innerText = content.course.description;
+
+                const courseDatesList = document.querySelector('ul');
+                courseDatesList.innerHTML = '';
+                course.CourseDates.forEach((date) => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        ${date.date} 參與人數: ${date.SignInSheets.length}
+                        <button onclick="editDate('${date.date}')">修改</button>
+                        <button onclick="deleteDate('${date.date}')">刪除</button>
+                    `;
+                    courseDatesList.appendChild(listItem);
+                });
+
+                document.getElementById('courseId').value = course.id;
+            }
+            }
+
+        fetchCourseData();
+
         function editDate(date) {
-            console.log(date);
             const newDate = prompt("請輸入新的日期:", date);
-            try{
-                if (newDate) {
+            if (newDate) {
                 fetch("/edit-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.id %>" })
+                    body: JSON.stringify({ oldDate: date, newDate, courseId: document.getElementById('courseId').value })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
                     }
                 });
-            }
-            }catch(error){
-                alert(error);
             }
         }
 
@@ -46,7 +78,7 @@
                 fetch("/delete-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ date, courseId: "<%= course.id %>"})
+                    body: JSON.stringify({ date, courseId: document.getElementById('courseId').value })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
@@ -56,14 +88,18 @@
         }
     </script>
 
-    <!-- 添加新增課程日期 -->
-    
+    <h1></h1>
+    <p></p>
+
+    <h2>課程日期</h2>
+    <ul></ul>
+
     <div id="dateAddForm">
         <h2>新增課程日期</h2>
         <form>
             <label for="date">日期:</label>
             <input type="date" id="date" name="date" required>
-            <input type="hidden" id="courseId" name="courseId" value="<%= course.id %>">
+            <input type="hidden" id="courseId" name="courseId">
             <button type="submit">新增課程日期</button>
         </form>
     </div>
@@ -72,10 +108,11 @@
             e.preventDefault();
             const date = document.getElementById("date").value;
             const courseId = document.getElementById("courseId").value;
+            const admin_id = content.admin.id;
             const response = await fetch("/add-course-date", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ date, courseId })
+                body: JSON.stringify({ admin_id, date, courseId })
             });
             if (response.ok) {
                 location.reload();
@@ -83,6 +120,6 @@
         });
     </script>
 
-    <a href="/course/<%= course.id %>">返回課程頁面</a>
+    <a href="/course">返回課程頁面</a>
 </body>
 </html>

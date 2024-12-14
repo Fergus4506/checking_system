@@ -104,8 +104,9 @@ app.get('/add-course', async (req, res) => {
 app.post('/add-course', async (req, res) => {
     const { name, description,token } = req.body;
     const decoded = jwt.verify(token, SECRET_KEY);
+    console.log(decoded);
     try {
-        const admin = await Admin.findOne({ where: { username: decoded.username } });
+        const admin = await Admin.findOne({ where: {  id: decoded.admin_id } });
         if (!admin) {
             return res.status(404).send('管理者未找到');
         }
@@ -176,7 +177,7 @@ app.post('/check', async (req, res) => {
 
 // 新增日期課程日期
 app.post('/add-course-date', async (req, res) => {
-    const { courseId, date } = req.body;
+    const { courseId, date,admin_id } = req.body;
     try {
         const course = await Course.findByPk(courseId);
         if (!course) return res.status(404).send('課程未找到');
@@ -285,8 +286,8 @@ app.post('/admin/login', async (req, res) => {
     try {
         const admin = await Admin.findOne({ where: { username, password } });
         if (!admin) return res.status(401).send('登入失敗');
-
-        const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
+        admin_id = admin.id;
+        const token = jwt.sign({ admin_id }, SECRET_KEY, { expiresIn: '1h' });
         res.json({ token });
     } catch (error) {
         console.error(error);
@@ -313,14 +314,36 @@ app.get('/admin/login', async (req, res) => {
 
 // 管理者登入後的頁面
 app.get('/admin', async (req, res) => {
-    const token = req.query.token || req.headers['authorization']?.split(' ')[1];
+    res.render('add-course_sql');
+});
+// 顯示目前管理者所建立的課程
+app.post('/admin/get_course',async (req, res) => {
+    const {token} = req.body;
     const decoded = jwt.verify(token, SECRET_KEY);
-    const admin = await Admin.findOne({ where: { username: decoded.username } });
-    if (!admin) return res.status(401).send('未授權');
-    console.log("正確進入管理者頁面");
+    const admin = await Admin.findOne({ where: {  id: decoded.admin_id } });
+    if (!admin) {
+        return res.status(404).send('管理者未找到');
+    }
     const courses = await Course.findAll({ where: { admin_id: admin.id } });
-    console.log(courses);
-    res.render('admin_sql',{admin,courses});
+    res.json({courses});
+});
+
+
+// 管理者管理頁面確認
+app.post('/admin', async (req, res) => {
+    const { token } = req.body;
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        console.log(decoded);
+        const admin = await Admin.findOne({ where: { id: decoded.admin_id } });
+        if (!admin) return res.status(404).send('管理者未找到');
+        const courses = await Course.findAll({ where: { admin_id: admin.id } });
+        const courseData = await CourseDate.findAll({where: {course_id: courses.id}});
+        res.json({admin,courses,courseData});
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('管理者登入失敗');
+    }
 });
 
 // 動態生成課程頁面

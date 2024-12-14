@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增課程</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #5cb85c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        a {
+            margin-right: 10px;
+            color: #337ab7;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .delete-button {
+            background-color: #d9534f;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>新增課程</h1>
+        <form id="addCourseForm">
+            <label for="name">課程名稱:</label>
+            <input type="text" id="name" name="name" required>
+            <br>
+            <label for="description">課程描述:</label>
+            <textarea id="description" name="description" required></textarea>
+            <br>
+            <button type="submit">新增課程</button>
+        </form>
+        <h2>目前的所有課程</h2>
+        <ul>
+        </ul>
+    </div>
+    <script>
+        document.getElementById('addCourseForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const token = document.cookie.split('; ').find(row => row.startsWith('admin_token=')).split('=')[1];
+
+            try {
+                const response = await fetch('/add-course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, description ,token})
+                });
+
+                if (response.ok) {
+                    alert('課程新增成功');
+                    location.reload();
+                } else {
+                    alert('課程新增失敗');
+                }
+            } catch (error) {
+                console.error('新增課程時發生錯誤:', error);
+                alert('新增課程時發生錯誤');
+            }
+        });
+
+        async function getCookie(name) {
+            let cookieArr = document.cookie.split(";");
+            for (let i = 0; i < cookieArr.length; i++) {
+                let cookiePair = cookieArr[i].split("=");
+                if (name == cookiePair[0].trim()) {
+                    const token = cookiePair[1].trim();
+                    try {
+                        const response = await fetch('/admin/get_course', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token: cookiePair[1].trim() })
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(data);
+                            return data;
+                        }
+                    } catch (error) {
+                        console.log(error);
+                    }
+                }
+            }
+            return null;
+        }
+
+        async function fetchCourseData() {
+            const content = await getCookie('admin_token');
+            console.log(content);
+            if (content) {
+                const courseList = document.querySelector('ul');
+                content.courses.forEach(course => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${course.name} - ${course.description}`;
+                    courseList.appendChild(listItem);
+                    const editLink = document.createElement('a');
+                    editLink.href = `/edit-course/${course.id}`;
+                    editLink.textContent = '編輯';
+                    listItem.appendChild(editLink);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '刪除';
+                    deleteButton.classList.add('delete-button');
+                    deleteButton.addEventListener('click', async () => {
+                        const token = document.cookie.split('; ').find(row => row.startsWith('admin_token=')).split('=')[1];
+                        try {
+                            const response = await fetch(`/delete-course/${course.id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ token })
+                            });
+
+                            if (response.ok) {
+                                alert('課程刪除成功');
+                                location.reload();
+                            } else {
+                                alert('課程刪除失敗');
+                            }
+                        } catch (error) {
+                            console.error('刪除課程時發生錯誤:', error);
+                            alert('刪除課程時發生錯誤');
+                        }
+                    });
+                    listItem.appendChild(deleteButton);
+
+                    const manageDatesLink = document.createElement('a');
+                    manageDatesLink.href = `/manage-course-dates/${course.id}`;
+                    manageDatesLink.textContent = '管理日期';
+                    listItem.appendChild(manageDatesLink);
+                });
+            }
+        }
+        fetchCourseData();
+    </script>
+</body>
+</html>
