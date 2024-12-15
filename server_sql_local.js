@@ -111,13 +111,50 @@ app.post('/add-course', async (req, res) => {
             return res.status(404).send('管理者未找到');
         }
         await Course.create({ name, description, admin_id: admin.id });
-        res.redirect('/add-course');
+        res.json({ message: '新增課程成功' });
     } catch (error) {
         console.error(error);
         res.status(500).send('新增課程失敗');
     }
-    
-    
+});
+
+//刪除課程
+app.post('/delete-course', async (req, res) => {
+    const { courseId } = req.body;
+    try {
+        const course = await Course.findByPk(courseId);
+        if (!course) {
+            return res.status(404).send('課程未找到');
+        }
+        const courseDate = await CourseDate.findAll({ where: { course_id: courseId } });
+        if (courseDate.length!=0) {
+            await SignInSheet.destroy({ where: { course_date_id: courseDate.course_date_id } });
+            await CourseDate.destroy({ where: { course_id: courseId } });
+        }
+        await Course.destroy({ where: { id: courseId } });
+        res.json({ message: '刪除課程成功' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('刪除課程失敗');
+    }
+});
+
+// 修改課程
+app.post('/edit-course', async (req, res) => {
+    const { courseId, name, description } = req.body;
+    try {
+        const course = await Course.findByPk(courseId);
+        if (!course) {
+            return res.status(404).send('課程未找到');
+        }
+        course.name = name;
+        course.description = description;
+        await course.save();
+        res.json({ message: '更新課程成功' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('更新課程失敗');
+    }
 });
 
 // 註冊參加者
@@ -261,8 +298,9 @@ app.post('/delete-course-date', async (req, res) => {
 // 管理者課程頁面
 app.get('/admin/course/:id', async (req, res) => {
     const { id } = req.params;
+    console.log("id:"+id);
     try {
-        const course = await Course.findByPk(id, {
+        const course_file = await Course.findByPk(id, {
             include: [
                 {
                     model: CourseDate,
@@ -271,7 +309,8 @@ app.get('/admin/course/:id', async (req, res) => {
                 Participant
             ],
         });
-        const courseData = course.toJSON();
+        const course = course_file.toJSON();
+        console.log(course);
         if (!course) return res.status(404).send('課程未找到');
         res.render('admin-course_sql', { course });
     } catch (error) {
@@ -319,13 +358,18 @@ app.get('/admin', async (req, res) => {
 // 顯示目前管理者所建立的課程
 app.post('/admin/get_course',async (req, res) => {
     const {token} = req.body;
-    const decoded = jwt.verify(token, SECRET_KEY);
-    const admin = await Admin.findOne({ where: {  id: decoded.admin_id } });
-    if (!admin) {
-        return res.status(404).send('管理者未找到');
+    try{
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const admin = await Admin.findOne({ where: {  id: decoded.admin_id } });
+        if (!admin) {
+            return res.status(404).send('管理者未找到');
+        }
+        const courses = await Course.findAll({ where: { admin_id: admin.id } });
+        res.json({courses,admin});
+    }catch (error) {
+        console.error(error);
+        res.message('登入超時請重新登入');
     }
-    const courses = await Course.findAll({ where: { admin_id: admin.id } });
-    res.json({courses});
 });
 
 
@@ -363,9 +407,46 @@ app.get('/course/:id',async (req, res) => {
 app.get('/course/:id/qrcode', async (req, res) => {
     try {
         const courseId = parseInt(req.params.id, 10);
+        //搜尋課程名稱
+        const course = await Course.findByPk(courseId);
+        if (!course) {
+            return res.status(404).send('課程未找到');
+        }
         const URL = `http://localhost:3000/course/${courseId}`;
         const qrCodeImage = await QRCode.toDataURL(URL);
-        res.send(`<img src="${qrCodeImage}" alt="QR Code"/>`);
+        res.send(`
+            <html>
+            <head>
+            <title>${course.name}課程 QR Code</title>
+            <style>
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f0f0f0;
+                font-family: Arial, sans-serif;
+            }
+            .container {
+                text-align: center;
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+            img {
+                margin-top: 20px;
+            }
+            </style>
+            </head>
+            <body>
+            <div class="container">
+            <h1>${course.name} QR Code</h1>
+            <img src="${qrCodeImage}" alt="QR Code"/>
+            </div>
+            </body>
+            </html>
+        `);
     } catch (error) {
         console.error(error);
         res.status(500).send('無法生成 QR Code');

@@ -82,6 +82,7 @@
 </head>
 <body>
     <div class="container">
+        <h1 id="admin_name"></h1>
         <h1>新增課程</h1>
         <form id="addCourseForm">
             <label for="name">課程名稱:</label>
@@ -114,8 +115,9 @@
                 });
 
                 if (response.ok) {
-                    alert('課程新增成功');
-                    location.reload();
+                    if(response.message=="登入超時請重新登入")
+                    alert('登入超時請重新登入');
+                    window.location.href = '/admin/login';
                 } else {
                     alert('課程新增失敗');
                 }
@@ -152,17 +154,48 @@
 
         async function fetchCourseData() {
             const content = await getCookie('admin_token');
-            console.log(content);
             if (content) {
+                document.getElementById('admin_name').textContent = `管理員: ${content.admin.username}`;
                 const courseList = document.querySelector('ul');
                 content.courses.forEach(course => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${course.name} - ${course.description}`;
+                    
+                    const nameInput = document.createElement('input');
+                    nameInput.type = 'text';
+                    nameInput.value = course.name;
+                    listItem.appendChild(nameInput);
+
+                    const descriptionInput = document.createElement('textarea');
+                    descriptionInput.value = course.description;
+                    listItem.appendChild(descriptionInput);
+
+                    const saveButton = document.createElement('button');
+                    saveButton.textContent = '修改';
+                    saveButton.addEventListener('click', async () => {
+                        const token = document.cookie.split('; ').find(row => row.startsWith('admin_token=')).split('=')[1];
+                        try {
+                            const edit_response = await fetch(`/edit-course`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ name: nameInput.value, description: descriptionInput.value, courseId: course.id})
+                            });
+                            console.log(edit_response);
+                            if (edit_response.ok) {
+                                alert('課程更新成功');
+                                location.reload();
+                            } else {
+                                alert('課程更新失敗');
+                            }
+                        } catch (error) {
+                            console.error('更新課程時發生錯誤:', error);
+                            alert('更新課程時發生錯誤');
+                        }
+                    });
+                    listItem.appendChild(saveButton);
+
                     courseList.appendChild(listItem);
-                    const editLink = document.createElement('a');
-                    editLink.href = `/edit-course/${course.id}`;
-                    editLink.textContent = '編輯';
-                    listItem.appendChild(editLink);
 
                     const deleteButton = document.createElement('button');
                     deleteButton.textContent = '刪除';
@@ -170,12 +203,12 @@
                     deleteButton.addEventListener('click', async () => {
                         const token = document.cookie.split('; ').find(row => row.startsWith('admin_token=')).split('=')[1];
                         try {
-                            const response = await fetch(`/delete-course/${course.id}`, {
-                                method: 'DELETE',
+                            const response = await fetch(`/delete-course`, {
+                                method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
-                                body: JSON.stringify({ token })
+                                body: JSON.stringify({ courseId: course.id})
                             });
 
                             if (response.ok) {
@@ -192,7 +225,7 @@
                     listItem.appendChild(deleteButton);
 
                     const manageDatesLink = document.createElement('a');
-                    manageDatesLink.href = `/manage-course-dates/${course.id}`;
+                    manageDatesLink.href = `/admin/course/${course.id}`;  
                     manageDatesLink.textContent = '管理日期';
                     listItem.appendChild(manageDatesLink);
                 });
