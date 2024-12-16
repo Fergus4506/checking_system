@@ -115,9 +115,11 @@
                 });
 
                 if (response.ok) {
-                    if(response.message=="登入超時請重新登入")
-                    alert('登入超時請重新登入');
-                    window.location.href = '/admin/login';
+                    if(response.message=="登入超時請重新登入"){
+                        alert('登入超時請重新登入');
+                        window.location.href = '/admin/login';
+                    }
+                    
                 } else {
                     alert('課程新增失敗');
                 }
@@ -155,9 +157,9 @@
         async function fetchCourseData() {
             const content = await getCookie('admin_token');
             if (content) {
-                document.getElementById('admin_name').textContent = `管理員: ${content.admin.username}`;
+                document.getElementById('admin_name').textContent = `管理員: ${content.admin.admin_check.Item.username}`;
                 const courseList = document.querySelector('ul');
-                content.courses.forEach(course => {
+                content.courses.admin_course.Items.forEach(course => {
                     const listItem = document.createElement('li');
                     
                     const nameInput = document.createElement('input');
@@ -179,7 +181,7 @@
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
-                                body: JSON.stringify({ name: nameInput.value, description: descriptionInput.value, courseId: course.id})
+                                body: JSON.stringify({ name: nameInput.value, description: descriptionInput.value, courseId: course.course_id })
                             });
                             console.log(edit_response);
                             if (edit_response.ok) {
@@ -208,7 +210,7 @@
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
-                                body: JSON.stringify({ courseId: course.id})
+                                body: JSON.stringify({ courseId: course.course_id})
                             });
 
                             if (response.ok) {
@@ -225,7 +227,7 @@
                     listItem.appendChild(deleteButton);
 
                     const manageDatesLink = document.createElement('a');
-                    manageDatesLink.href = `/admin/course/${course.id}`;  
+                    manageDatesLink.href = `/admin/course/${course.course_id}`;  
                     manageDatesLink.textContent = '管理日期';
                     listItem.appendChild(manageDatesLink);
                 });

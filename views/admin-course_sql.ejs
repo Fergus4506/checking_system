@@ -3,30 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= course.name %> - 管理頁面</title>
+    <title><%= course.course_sl.Item.name %> - 管理頁面</title>
 </head>
 <body>
-    <h1><%= course.name %> - 管理頁面</h1>
-    <p><%= course.description %></p>
+    <h1><%= course.course_sl.Item.name %> - 管理頁面</h1>
+    <p><%= course.course_sl.Item.description %></p>
 
     <h2>課程日期</h2>
     <ul>
-        <% course.CourseDates.forEach((date, index) => { %>
+        <% if (courseDate && courseDate.course_date_sl.Items) { %>
+            <% courseDate.course_date_sl.Items.forEach((date, index) => { %>
             <li>
-                <%= date.date %> 參與人數: <%= date.SingInSheet ? date.SingInSheet.length : 0 %>
+                <%= date.date %> 參與人數: <%= date.singInSheet ? date.singInSheet.length : 0 %>
                 <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
                 <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
             </li>
             <ul>
-                <% if (date.SingInSheet && date.SingInSheet.length > 0) { %>
-                    <% date.SingInSheet.forEach(participant => { %>
-                        <li><%= participant.username %>/簽到時間<%= participant.check_time %></li>
-                    <% }) %>
+                <% if (date.singInSheet && date.singInSheet.length > 0) { %>
+                <% date.singInSheet.forEach(participant => { %>
+                    <li><%= participant.username %>/簽到時間<%= participant.check_time %></li>
+                <% }) %>
                 <% } else { %>
-                    <li>無人簽到</li>
+                <li>無人簽到</li>
                 <% } %>
             </ul>
-        <% }) %>
+            <% }) %>
+        <% } else { %>
+            <li>無課程日期</li>
+        <% } %>
     </ul>
 
     <script>
@@ -89,7 +93,7 @@
     </script>
     <h2>參與名單</h2>
     <ul>
-        <% course.Participants.forEach(participant => { %>
+        <% participant.participant_sl.Items.forEach(participant => { %>
             <li><%= participant.username %> - <%= participant.phone %></li>
         <% }) %>
     </ul>

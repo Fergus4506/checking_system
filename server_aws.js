@@ -24,38 +24,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 路由區域
 const URL = 'https://7wms588ytb.execute-api.us-east-1.amazonaws.com';
 
-// 新增課程頁面
-app.get('/add-course', async (req, res) => {
-    const token = req.headers.authorization.split(' ')[1];
-    try {
-        // 取得所有該管理者所建立的課程
-        const decoded = jwt.verify(token, SECRET_KEY);
-        const admin = await fetch(`${URL}/admin/${decoded.admin_id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }).then(res => res.json());
-        if (!admin || !admin.Item) {
-            return res.status(404).send('管理者未找到');
-        }
-        const courses_search = await fetch(`${URL}/Course/admin/${admin.Item.admin_id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }).then(res => res.json()
-        )
-        const courses = courses_search.Items;
-        console.log("-----------------");
-        console.log("新增一門課程");
-        console.log("courses:"+courses);
-        res.render('add-course', { courses });
-    } catch (error) {
-        console.error('取得課程失敗：', error);
-        res.status(500).send('取得課程失敗');
-    }
-});
 
 //新增課程
 app.post('/add-course', async (req, res) => {
@@ -70,7 +38,8 @@ app.post('/add-course', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!admin || !admin.Item) {
+        console.log(admin);
+        if (!admin || !admin) {
             return res.status(404).send('管理者未找到');
         }
         // await Course.create({ name, description, admin_id: admin.id });
@@ -81,6 +50,7 @@ app.post('/add-course', async (req, res) => {
             },
             body: JSON.stringify({ name, description}),
         }).then(res => res.json());
+        console.log(course);
         res.json({ message: '新增課程成功' });
     } catch (error) {
         console.error(error);
@@ -99,7 +69,7 @@ app.post('/delete-course', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!course || !course.Item) {
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
         // const courseDate = await CourseDate.findAll({ where: { course_id: courseId } });
@@ -132,13 +102,13 @@ app.post('/edit-course', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!course || !course.Item) {
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
         // course.name = name;
         // course.description = description;
         // await course.save();
-        await fetch(`${URL}/Course/edit/${courseId}`, {
+        const edit=await fetch(`${URL}/Course/edit/${courseId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -477,32 +447,42 @@ app.get('/admin/course/:id', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        const participant = await fetch(`${URL}/Participant/${course.Item.course_id}`, {
+        console.log(course);
+        const participant = await fetch(`${URL}/Participant/${course.course_sl.Item.course_id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        const courseDate = await fetch(`${URL}/CourseDate/${course.Item.course_id}`, {
+        console.log(participant);
+        const courseDate = await fetch(`${URL}/CourseDate/${course.course_sl.Item.course_id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
+        console.log(courseDate);
         //抓取每個課程日期的參加人員
-        for (let i = 0; i < courseDate.Items.length; i++) {
-            const signInSheet = await fetch(`${URL}/SignInSheet/CourseDate/${courseDate.Items[i].course_date_id}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            }).then(res => res.json());
-            courseDate.Items[i].signInSheet = signInSheet.Items;
+        if(courseDate.course_date_sl.Item){
+            for (let i = 0; i < courseDate.course_date_sl.Item.length; i++) {
+                const signInSheet = await fetch(`${URL}/SignInSheet/CourseDate/${courseDate.Items[i].course_date_id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }).then(res => res.json());
+                courseDate.course_date_sl.Items[i].signInSheet = signInSheet.Items;
+            }
+        }else{
+            courseDate.course_date_sl.Items=[];
+        }
+        if(!participant.participant_sl.Item){
+            participant.participant_sl.Items=[];
         }
 
         
-        console.log(course);
-        if (!course || !course.Item) return res.status(404).send('課程未找到');
+        console.log(courseDate);
+        if (!course || !course.course_sl.Item) return res.status(404).send('課程未找到');
         res.render('admin-course_sql', { course, participant, courseDate });
     } catch (error) {
         console.error(error);
@@ -523,6 +503,7 @@ app.post('/admin/login', async (req, res) => {
             body: JSON.stringify({ username, password }),
         }).then(res => res.json());
         if (!admin) return res.status(401).send('登入失敗');
+        console.log(admin);
         admin_id = admin.id;
         const token = jwt.sign({ admin_id }, SECRET_KEY, { expiresIn: '1h' });
         res.json({ token });
@@ -566,22 +547,24 @@ app.post('/admin/get_course',async (req, res) => {
     try{
         const decoded = jwt.verify(token, SECRET_KEY);
         // const admin = await Admin.findOne({ where: {  id: decoded.admin_id } });
+        console.log(decoded);
         const admin = await fetch(`${URL}/admin/${decoded.admin_id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!admin || !admin.Item) {
+        if (!admin || !admin.admin_check.Item) {
             return res.status(404).send('管理者未找到');
         }
         // const courses = await Course.findAll({ where: { admin_id: admin.id } });
-        const courses = await fetch(`${URL}/Course/admin/${admin.Item.admin_id}`, {
+        const courses = await fetch(`${URL}/Course/admin/${admin.admin_check.Item.admin_id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
+        console.log(courses);
         res.json({courses,admin});
     }catch (error) {
         console.error(error);

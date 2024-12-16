@@ -4,7 +4,9 @@ import {
   PutCommand,
   GetCommand,
   DeleteCommand,
+  ScanCommand,
   QueryCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({});
@@ -59,9 +61,9 @@ export const handler = async (event,context) => {
             //3.獲取指定管理者的所有課程
             case 'GET /Course/admin/{id}':
                 const admin_course = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "Course",
-                        KeyConditionExpression: "admin_id = :admin_id",
+                        FilterExpression: "admin_id = :admin_id",
                         ExpressionAttributeValues: {
                             ":admin_id": parseInt(event.pathParameters.id, 10),
                         },
@@ -172,9 +174,9 @@ export const handler = async (event,context) => {
             case 'POST /admin/login':
                 let admin_login_file = JSON.parse(event.body);
                 const login_check = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "Admin",
-                        KeyConditionExpression: "username = :username",
+                        FilterExpression: "username = :username",
                         ExpressionAttributeValues: {
                             ":username": admin_login_file.username,
                         },
@@ -184,7 +186,7 @@ export const handler = async (event,context) => {
                     body = JSON.stringify({ message: `Login failed: ${login_file.username}`,id:login_check.Items[0].admin_id });
                     break;
                 }
-                body = JSON.stringify({ message: `Login successfully: ${admin_login_file.username}` });
+                body = JSON.stringify({ message: `Login successfully: ${admin_login_file.username}` ,id:login_check.Items[0].admin_id});
                 break;
             //8.新增課程日期
             case 'POST /CourseDate/{id}':
