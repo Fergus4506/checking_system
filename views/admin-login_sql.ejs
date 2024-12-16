@@ -157,7 +157,7 @@
                     }
                     // 將 token 儲存在 cookie 中（選擇 HttpOnly 和 Secure 在後端設置更為安全）
                     document.cookie = `admin_token=${token}; path=/`;
-                    alert(document.cookie);
+                    alert('登入成功');
                     window.location = '/admin'
                 } else {
                     alert('登入失敗');

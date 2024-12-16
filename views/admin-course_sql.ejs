@@ -4,78 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= course.course_sl.Item.name %> - 管理頁面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #444;
+        }
+
+        p {
+            text-align: center;
+            max-width: 800px;
+            line-height: 1.5;
+        }
+
+        .section {
+            margin: 20px 0;
+            width: 100%;
+            max-width: 800px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .section h2 {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        .btn-group button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-group button:hover {
+            background-color: #0056b3;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type="date"],
+        button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .participant-list li {
+            justify-content: flex-start;
+            gap: 20px;
+        }
+
+        a {
+            margin-top: 20px;
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <h1><%= course.course_sl.Item.name %> - 管理頁面</h1>
     <p><%= course.course_sl.Item.description %></p>
 
-    <h2>課程日期</h2>
-    <ul>
-        <% if (courseDate && courseDate.course_course_date.Items) { %>
-            <% courseDate.course_course_date.Items.forEach((date, index) => { %>
-            <li>
-                <%= date.date %> 參與人數: <%= signInSheet_Array[index].Count %>
-                <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
-                <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
-            </li>
-            <ul>
-                <% if (signInSheet_Array[index].Count > 0) { %>
-                <% signInSheet_Array[index].Items.forEach(participant => { %>
-                    <li><%= participant.username %>簽到時間<%= participant.check_time %></li>
+    <div class="section">
+        <h2>課程日期</h2>
+        <ul>
+            <% if (courseDate && courseDate.course_course_date.Items) { %>
+                <% courseDate.course_course_date.Items.forEach((date, index) => { %>
+                <li>
+                    <span><%= date.date %> - 參與人數: <%= signInSheet_Array[index].Count %></span>
+                    <div class="btn-group">
+                        <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
+                        <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
+                    </div>
+                </li>
+                <ul>
+                    <% if (signInSheet_Array[index].Count > 0) { %>
+                    <% signInSheet_Array[index].Items.forEach(participant => { %>
+                        <li class="participant-list">
+                            <span><%= participant.username %> 簽到時間: <%= participant.check_time %></span>
+                        </li>
+                    <% }) %>
+                    <% } else { %>
+                    <li>無人簽到</li>
+                    <% } %>
+                </ul>
                 <% }) %>
-                <% } else { %>
-                <li>無人簽到</li>
-                <% } %>
-            </ul>
-            <% }) %>
-        <% } else { %>
-            <li>無課程日期</li>
-        <% } %>
-    </ul>
+            <% } else { %>
+                <li>無課程日期</li>
+            <% } %>
+        </ul>
+    </div>
 
-    <script>
-        function editDate(date, index) {
-            console.log(date, index);
-            const newDate = prompt("請輸入新的日期:", date);
-            if (newDate) {
-                fetch("/edit-course-date", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.course_sl.Item.course_id %>", index })
-                }).then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
-            }
-        }
-
-        function deleteDate(date, index) {
-            if (confirm("確定要刪除此日期嗎?")) {
-                fetch("/delete-course-date", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ date, courseId: "<%= course.course_sl.Item.course_id %>", index })
-                }).then(response => {
-                    if (response.ok) {
-                        location.reload();
-                    }
-                });
-            }
-        }
-    </script>
-
-    <!-- 添加新增課程日期 -->
-    
-    <div id="dateAddForm">
+    <div class="section">
         <h2>新增課程日期</h2>
-        <form>
+        <form id="dateAddForm">
             <label for="date">日期:</label>
             <input type="date" id="date" name="date" required>
             <input type="hidden" id="courseId" name="courseId" value="<%= course.course_sl.Item.course_id %>">
             <button type="submit">新增課程日期</button>
         </form>
     </div>
+
+    <div class="section">
+        <h2>參與名單</h2>
+        <ul>
+            <% participant.participant_sl.Items.forEach(participant => { %>
+                <li class="participant-list">
+                    <span><%= participant.username %> - <%= participant.phone %></span>
+                </li>
+            <% }) %>
+        </ul>
+    </div>
+
+    <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode">返回課程頁面</a>
+
     <script>
         document.getElementById("dateAddForm").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -91,13 +188,5 @@
             }
         });
     </script>
-    <h2>參與名單</h2>
-    <ul>
-        <% participant.participant_sl.Items.forEach(participant => { %>
-            <li><%= participant.username %> - <%= participant.phone %></li>
-        <% }) %>
-    </ul>
-
-    <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode">返回課程頁面</a>
 </body>
 </html>
