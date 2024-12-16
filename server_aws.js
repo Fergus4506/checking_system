@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const path = require('path');
 const QRCode = require('qrcode');
+const { sign } = require('crypto');
 
 // 初始化 Express 和資料庫
 const app = express();
@@ -134,7 +135,8 @@ app.post('/register', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!course || !course.Item) {
+        console.log(course);
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
 
@@ -160,7 +162,7 @@ app.post('/check', async (req, res) => {
     console.log("token:"+token);
     try {
         const decoded = jwt.verify(token, SECRET_KEY + courseId.toString().padStart(8, '0'));
-
+        console.log(decoded);
         // const participant = await Participant.findOne({ where: { course_id: courseId, username: decoded.username } });
         const participant = await fetch(`${URL}/Participant/name/${decoded.username}`, {
             method: 'GET',
@@ -168,14 +170,15 @@ app.post('/check', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
+        console.log(participant);
         //確認該參加者有沒有參加該課程
-        if (!participant || !participant.Item) {
+        if (!participant || !participant.participant_name.Items) {
             console.log('使用者未找到');
             return res.status(200).json({ message: '使用者未找到' });
         }
-        const check_participant=false;
-        for (let i = 0; i < participant.Items.length; i++) {
-            if (participant.Items[i].course_id == courseId) {
+        let check_participant=false;
+        for (let i = 0; i < participant.participant_name.Count; i++) {
+            if (participant.participant_name.Items[i].course_id == courseId) {
                 check_participant=true;
                 break;
             }
@@ -196,15 +199,16 @@ app.post('/check', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!courseDate || !courseDate.Item) {
+        console.log(courseDate);
+        if (!courseDate || !courseDate.course_course_date.Items) {
             console.log('還未到簽到時間');
             return res.status(200).json({ message: '還未到簽到時間' });
         } 
-        const courseDate_check=false;
-        const nowCourseDateID=null;
-        for (let i = 0; i < courseDate.Items.length; i++) {
-            if (courseDate.Items[i].date == date) {
-                nowCourseDateID=courseDate.Items[i].course_date_id;
+        let courseDate_check=false;
+        let nowCourseDateID=null;
+        for (let i = 0; i < courseDate.course_course_date.Count; i++) {
+            if (courseDate.course_course_date.Items[i].date == date) {
+                nowCourseDateID=courseDate.course_course_date.Items[i].course_date_id;
                 courseDate_check=true;
                 break;
             }
@@ -221,9 +225,10 @@ app.post('/check', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        const check_alreadySignedIn=false;
-        for (let i = 0; i < alreadySignedIn.Items.length; i++) {
-            if (alreadySignedIn.Items[i].username == decoded.username) {
+        console.log(alreadySignedIn);
+        let check_alreadySignedIn=false;
+        for (let i = 0; i < alreadySignedIn.course_date_sign_in.Count; i++) {
+            if (alreadySignedIn.course_date_sign_in.Items[i].username == decoded.username) {
                 check_alreadySignedIn=true;
                 break;
             }
@@ -260,7 +265,8 @@ app.post('/add-course-date', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!course || !course.Item) {
+        console.log(course);
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
 
@@ -271,11 +277,14 @@ app.post('/add-course-date', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        const check_existingDate=false;
-        for (let i = 0; i < existingDate.Items.length; i++) {
-            if (existingDate.Items[i].date == date) {
-                check_existingDate=true;
-                break;
+        console.log(existingDate);
+        let check_existingDate=false;
+        if(existingDate.course_date_sl.Items){
+            for (let i = 0; i < existingDate.course_date_sl.Items.length; i++) {
+                if (existingDate.Items[i].date == date) {
+                    check_existingDate=true;
+                    break;
+                }
             }
         }
         if (check_existingDate) return res.status(400).send('日期重複');
@@ -309,20 +318,21 @@ app.post('/edit-course-date', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!course) {
+        console.log(course);
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
 
         // const existingDate = await CourseDate.findOne({ where: { course_id: courseId, date: newDate } });
-        const existingDate = await fetch(`${URL}/CourseDate/${courseId}`, {
+        const existingDate = await fetch(`${URL}/CourseDate/course/${courseId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        const check_existingDate=false;
-        for (let i = 0; i < existingDate.Items.length; i++) {
-            if (existingDate.Items[i].date == newDate) {
+        let check_existingDate=false;
+        for (let i = 0; i < existingDate.course_course_date.Count; i++) {
+            if (existingDate.course_course_date.Items[i].date == newDate) {
                 check_existingDate=true;
                 break;
             }
@@ -331,12 +341,12 @@ app.post('/edit-course-date', async (req, res) => {
             return res.status(400).send('日期重複');
         }
         // const courseDate = await CourseDate.findOne({ where: { course_id: courseId, date:oldDate } });
-        const check_have_date=false;
-        const changeDateID=null;
-        for (let i = 0; i < existingDate.Items.length; i++) {
-            if (existingDate.Items[i].date == oldDate) {
+        let check_have_date=false;
+        let changeDateID=null;
+        for (let i = 0; i < existingDate.course_course_date.Count; i++) {
+            if (existingDate.course_course_date.Items[i].date == oldDate) {
                 check_have_date=true;
-                changeDateID=existingDate.Items[i].course_date_id;
+                changeDateID=existingDate.course_course_date.Items[i].course_date_id;
                 break;
             }
         }
@@ -346,15 +356,16 @@ app.post('/edit-course-date', async (req, res) => {
 
         // courseDate.date = newDate;
         // await courseDate.save();
-        await fetch(`${URL}/CourseDate/edit/${changeDateID}`, {
+        console.log(newDate);
+        const change_check=await fetch(`${URL}/CourseDate/edit/${changeDateID}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ newDate }),
         }).then(res => res.json());
-
-        console.log(course);
+        
+        console.log(change_check);
         res.redirect(`/admin/course/${courseId}`);
     } catch (error) {
         console.error(error);
@@ -379,24 +390,25 @@ app.post('/delete-course-date', async (req, res) => {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        if (!course) {
+        console.log(course);
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
 
 
         // const courseDate = await CourseDate.findOne({ where: { course_id: courseId, date } });
-        const courseDate = await fetch(`${URL}/CourseDate/${courseId}`, {
+        const courseDate = await fetch(`${URL}/CourseDate/course/${courseId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
-        }).then(res => res.json());
-        const check_have_date=false;
-        const changeDateID=null;
-        for (let i = 0; i < courseDate.Items.length; i++) {
-            if (courseDate.Items[i].date == date) {
+        }).then(res => res.json());;
+        let check_have_date=false;
+        let changeDateID=null;
+        for (let i = 0; i < courseDate.course_course_date.Count; i++) {
+            if (courseDate.course_course_date.Items[i].date == date) {
                 check_have_date=true;
-                changeDateID=courseDate.Items[i].course_date_id;
+                changeDateID=courseDate.course_course_date.Items[i].course_date_id;
                 break;
             }
         }
@@ -413,12 +425,13 @@ app.post('/delete-course-date', async (req, res) => {
 
         // await courseDate.destroy();
 
-        await fetch(`${URL}/CourseDate/delete/${changeDateID}`, {
+        const delete_check=await fetch(`${URL}/CourseDate/delete/${changeDateID}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
+        console.log(delete_check);
         res.redirect(`/admin/course/${courseId}`);
     } catch (error) {
         console.error(error);
@@ -431,23 +444,13 @@ app.get('/admin/course/:id', async (req, res) => {
     const { id } = req.params;
     console.log("id:"+id);
     try {
-        // const course_file = await Course.findByPk(id, {
-        //     include: [
-        //         {
-        //             model: CourseDate,
-        //             include: [SignInSheet]
-        //         },
-        //         Participant
-        //     ],
-        // });
-        // const course = course_file.toJSON();
         const course = await fetch(`${URL}/Course/${id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         }).then(res => res.json());
-        console.log(course);
+        // console.log(course);
         const participant = await fetch(`${URL}/Participant/${course.course_sl.Item.course_id}`, {
             method: 'GET',
             headers: {
@@ -455,7 +458,7 @@ app.get('/admin/course/:id', async (req, res) => {
             },
         }).then(res => res.json());
         console.log(participant);
-        const courseDate = await fetch(`${URL}/CourseDate/${course.course_sl.Item.course_id}`, {
+        let courseDate = await fetch(`${URL}/CourseDate/course/${course.course_sl.Item.course_id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -463,27 +466,30 @@ app.get('/admin/course/:id', async (req, res) => {
         }).then(res => res.json());
         console.log(courseDate);
         //抓取每個課程日期的參加人員
-        if(courseDate.course_date_sl.Item){
-            for (let i = 0; i < courseDate.course_date_sl.Item.length; i++) {
-                const signInSheet = await fetch(`${URL}/SignInSheet/CourseDate/${courseDate.Items[i].course_date_id}`, {
+        let signInSheet_Array = [];
+        if(courseDate.course_course_date.Items){
+            console.log('have in');
+            for (let i = 0; i < courseDate.course_course_date.Count; i++) {
+                const signInSheet = await fetch(`${URL}/SignInSheet/CourseDate/${courseDate.course_course_date.Items[i].course_date_id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                 }).then(res => res.json());
-                courseDate.course_date_sl.Items[i].signInSheet = signInSheet.Items;
+                await console.log(signInSheet.course_date_sign_in.Items);
+                signInSheet_Array.push(signInSheet.course_date_sign_in);
             }
         }else{
-            courseDate.course_date_sl.Items=[];
+            courseDate.course_course_date.Items=[];
         }
-        if(!participant.participant_sl.Item){
+        if(!participant.participant_sl.Items){
             participant.participant_sl.Items=[];
         }
 
         
-        console.log(courseDate);
+        console.log(signInSheet_Array);
         if (!course || !course.course_sl.Item) return res.status(404).send('課程未找到');
-        res.render('admin-course_sql', { course, participant, courseDate });
+        res.render('admin-course_sql', { course, participant, courseDate ,signInSheet_Array});
     } catch (error) {
         console.error(error);
         res.status(500).send('無法載入管理頁面');
@@ -636,16 +642,22 @@ app.get('/course/:id/qrcode', async (req, res) => {
     try {
         const courseId = parseInt(req.params.id, 10);
         //搜尋課程名稱
-        const course = await Course.findByPk(courseId);
-        if (!course) {
+        const course = await fetch(`${URL}/Course/${courseId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(res => res.json());
+        if (!course || !course.course_sl.Item) {
             return res.status(404).send('課程未找到');
         }
-        const URL = `http://localhost:3000/course/${courseId}`;
-        const qrCodeImage = await QRCode.toDataURL(URL);
+        console.log(courseId);
+        const creat_URL = `http://localhost:3000/course/${courseId}`;
+        const qrCodeImage = await QRCode.toDataURL(creat_URL);
         res.send(`
             <html>
             <head>
-            <title>${course.name}課程 QR Code</title>
+            <title>${course.course_sl.Item.name}課程 QR Code</title>
             <style>
             body {
                 display: flex;
@@ -669,7 +681,7 @@ app.get('/course/:id/qrcode', async (req, res) => {
             </head>
             <body>
             <div class="container">
-            <h1>${course.name} QR Code</h1>
+            <h1>${course.course_sl.Item.name} QR Code</h1>
             <img src="${qrCodeImage}" alt="QR Code"/>
             </div>
             </body>

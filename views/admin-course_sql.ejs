@@ -11,17 +11,17 @@
 
     <h2>課程日期</h2>
     <ul>
-        <% if (courseDate && courseDate.course_date_sl.Items) { %>
-            <% courseDate.course_date_sl.Items.forEach((date, index) => { %>
+        <% if (courseDate && courseDate.course_course_date.Items) { %>
+            <% courseDate.course_course_date.Items.forEach((date, index) => { %>
             <li>
-                <%= date.date %> 參與人數: <%= date.singInSheet ? date.singInSheet.length : 0 %>
+                <%= date.date %> 參與人數: <%= signInSheet_Array[index].Count %>
                 <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
                 <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
             </li>
             <ul>
-                <% if (date.singInSheet && date.singInSheet.length > 0) { %>
-                <% date.singInSheet.forEach(participant => { %>
-                    <li><%= participant.username %>/簽到時間<%= participant.check_time %></li>
+                <% if (signInSheet_Array[index].Count > 0) { %>
+                <% signInSheet_Array[index].Items.forEach(participant => { %>
+                    <li><%= participant.username %>簽到時間<%= participant.check_time %></li>
                 <% }) %>
                 <% } else { %>
                 <li>無人簽到</li>
@@ -41,7 +41,7 @@
                 fetch("/edit-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.id %>", index })
+                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.course_sl.Item.course_id %>", index })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
@@ -55,7 +55,7 @@
                 fetch("/delete-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ date, courseId: "<%= course.id %>", index })
+                    body: JSON.stringify({ date, courseId: "<%= course.course_sl.Item.course_id %>", index })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
@@ -72,7 +72,7 @@
         <form>
             <label for="date">日期:</label>
             <input type="date" id="date" name="date" required>
-            <input type="hidden" id="courseId" name="courseId" value="<%= course.id %>">
+            <input type="hidden" id="courseId" name="courseId" value="<%= course.course_sl.Item.course_id %>">
             <button type="submit">新增課程日期</button>
         </form>
     </div>
@@ -98,6 +98,6 @@
         <% }) %>
     </ul>
 
-    <a href="/course/<%= course.id %>/qrcode">返回課程頁面</a>
+    <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode">返回課程頁面</a>
 </body>
 </html>

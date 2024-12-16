@@ -218,9 +218,9 @@ export const handler = async (event,context) => {
             //10.獲取指定課程的所有日期
             case 'GET /CourseDate/course/{id}':
                 const course_course_date = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "CourseDate",
-                        KeyConditionExpression: "course_id = :course_id",
+                        FilterExpression: "course_id = :course_id",
                         ExpressionAttributeValues: {
                             ":course_id": parseInt(event.pathParameters.id, 10),
                         },
@@ -242,7 +242,7 @@ export const handler = async (event,context) => {
                             "#date": "date",
                         },
                         ExpressionAttributeValues: {
-                            ":date": course_date_edit_file.date,
+                            ":date": course_date_edit_file.newDate,
                         },
                     })
                 );
@@ -252,9 +252,9 @@ export const handler = async (event,context) => {
             case 'POST /CourseDate/delete/{id}':
                 //搜尋課程日期相對應的簽到人員
                 const sign_in_sheet = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "SignInSheet",
-                        KeyConditionExpression: "course_date_id = :course_date_id",
+                        FilterExpression: "course_date_id = :course_date_id",
                         ExpressionAttributeValues: {
                             ":course_date_id": parseInt(event.pathParameters.id, 10),
                         },
@@ -290,7 +290,7 @@ export const handler = async (event,context) => {
                         Item: {
                             participant_id: Participant_id_counter++,
                             course_id: parseInt(event.pathParameters.id, 10),
-                            username: add_participant_file.name,
+                            username: add_participant_file.username,
                             phone: add_participant_file.phone,
                         },
                     })
@@ -312,15 +312,14 @@ export const handler = async (event,context) => {
             //15.獲取指定姓名的參與者
             case 'GET /Participant/name/{name}':
                 const participant_name = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "Participant",
-                        IndexName: "username-index",
-                        KeyConditionExpression: "#username = :username",
+                        FilterExpression: "#username = :username",
                         ExpressionAttributeNames: {
                             "#username": "username",
                         },
                         ExpressionAttributeValues: {
-                            ":username": event.pathParameters.username,
+                            ":username": event.pathParameters.name,
                         },
                     })
                 );
@@ -413,11 +412,11 @@ export const handler = async (event,context) => {
             //20.獲取指定課程日期的簽到人員
             case 'GET /SignInSheet/CourseDate/{id}':
                 const course_date_sign_in = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "SignInSheet",
-                        KeyConditionExpression: "course_date_id = :course_date_id",
+                        FilterExpression: "course_date_id = :course_date_id",
                         ExpressionAttributeValues: {
-                            ":course_date_id":parseInt(event.pathParameters.id, 10),
+                            ":course_date_id": parseInt(event.pathParameters.id, 10),
                         },
                     })
                 );
