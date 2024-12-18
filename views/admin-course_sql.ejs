@@ -125,30 +125,39 @@
         <ul>
             <% if (courseDate && courseDate.course_course_date.Items) { %>
                 <% courseDate.course_course_date.Items.forEach((date, index) => { %>
-                <li>
-                    <span><%= date.date %> - 參與人數: <%= signInSheet_Array[index].Count %></span>
-                    <div class="btn-group">
-                        <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
-                        <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
-                    </div>
-                </li>
-                <ul>
-                    <% if (signInSheet_Array[index].Count > 0) { %>
-                    <% signInSheet_Array[index].Items.forEach(participant => { %>
-                        <li class="participant-list">
-                            <span><%= participant.username %> 簽到時間: <%= participant.check_time %></span>
-                        </li>
-                    <% }) %>
-                    <% } else { %>
-                    <li>無人簽到</li>
-                    <% } %>
-                </ul>
+                    <li>
+                        <span onclick="toggleParticipants('<%= index %>')">
+                            <%= date.date %> - 參與人數: <%= signInSheet_Array[index].Count %>
+                            <i id="icon-<%= index %>" class="fas fa-chevron-down"></i>
+                        </span>
+                        <div class="btn-group">
+                            <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
+                            <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
+                            <button onclick="output_Date(<%= date.course_date_id%>)">匯出本日報到紀錄</button>
+                        </div>
+                    </li>
+                    <li id="participants-<%= index %>" style="display: none;">
+                        <% if (signInSheet_Array[index].Count > 0) { %>
+                            <% signInSheet_Array[index].Items.forEach(participant => { %>
+                                <ul class="participant-list">
+                                    <div>
+                                        <span>報到人員:<%= participant.username %></span>
+                                        <br>
+                                        <span class="check-time">簽到時間: <%= participant.check_time %></span>
+                                    </div>
+                                </ul>
+                            <% }) %>
+                        <% } else { %>
+                            <li>無人簽到</li>
+                        <% } %>
+                    </li>
                 <% }) %>
             <% } else { %>
                 <li>無課程日期</li>
             <% } %>
         </ul>
     </div>
+
 
     <div class="section">
         <h2>新增課程日期</h2>
@@ -163,7 +172,7 @@
     <div class="section">
         <h2>參與名單</h2>
         <ul>
-            <% participant.participant_sl.Items.forEach(participant => { %>
+            <% participant.course_participant.Items.forEach(participant => { %>
                 <li class="participant-list">
                     <span><%= participant.username %> - <%= participant.phone %></span>
                 </li>
@@ -174,6 +183,73 @@
     <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode">返回課程頁面</a>
 
     <script>
+        function toggleParticipants(index) {
+            const participantsList = document.getElementById(`participants-${index}`);
+            const icon = document.getElementById(`icon-${index}`);
+            if (participantsList.style.display === 'none') {
+                participantsList.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                participantsList.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+        function editDate(date, index) {
+            console.log(date, index);
+            const newDate = prompt("請輸入新的日期:", date);
+            if (newDate) {
+                fetch("/edit-course-date", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.course_sl.Item.course_id %>", index })
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        function deleteDate(date, index) {
+            if (confirm("確定要刪除此日期嗎?")) {
+                fetch("/delete-course-date", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ date, courseId: "<%= course.course_sl.Item.course_id %>", index })
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+        async function output_Date(course_date_id) {
+            console.log(course_date_id);
+            // 透過 fetch 取得報到紀錄
+            const response = await fetch(`/get_sheet_date/${course_date_id}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            });
+            const data = await response.json();
+            console.log(data);
+            // 將 signInSheet_Array[index] 的資料轉成 csv 格式
+            const csv = data.course_date_sign_in.Items.map(participant => {
+            return `${participant.username},${participant.check_time}`;
+            }).join("\n");
+
+            // 下載 csv 檔
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `attendance_${course_date_id}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
         document.getElementById("dateAddForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             const date = document.getElementById("date").value;
@@ -187,6 +263,8 @@
                 location.reload();
             }
         });
+        
     </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
 </html>

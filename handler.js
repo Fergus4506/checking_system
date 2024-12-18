@@ -328,9 +328,9 @@ export const handler = async (event,context) => {
             //16.獲取指定課程的所有參與者
             case 'GET /Participant/course/{id}':
                 const course_participant = await dynamo.send(
-                    new QueryCommand({
+                    new ScanCommand({
                         TableName: "Participant",
-                        KeyConditionExpression: "course_id = :course_id",
+                        FilterExpression: "course_id = :course_id",
                         ExpressionAttributeValues: {
                             ":course_id": parseInt(event.pathParameters.id, 10),
                         },

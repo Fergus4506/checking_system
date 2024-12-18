@@ -451,7 +451,7 @@ app.get('/admin/course/:id', async (req, res) => {
             },
         }).then(res => res.json());
         // console.log(course);
-        const participant = await fetch(`${URL}/Participant/${course.course_sl.Item.course_id}`, {
+        const participant = await fetch(`${URL}/Participant/course/${course.course_sl.Item.course_id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -482,7 +482,7 @@ app.get('/admin/course/:id', async (req, res) => {
         }else{
             courseDate.course_course_date.Items=[];
         }
-        if(!participant.participant_sl.Items){
+        if(!participant.course_participant.Items){
             participant.participant_sl.Items=[];
         }
 
@@ -691,6 +691,20 @@ app.get('/course/:id/qrcode', async (req, res) => {
         console.error(error);
         res.status(500).send('無法生成 QR Code');
     }
+});
+
+//利用course_date_id取得簽到資料
+app.get('/get_sheet_date/:id', async (req, res) => {
+    const course_date_id = parseInt(req.params.id, 10);
+    // const signInSheet = await SignInSheet.findAll({ where: { course_date_id } });
+    const signInSheet = await fetch(`${URL}/SignInSheet/CourseDate/${course_date_id}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    }).then(res => res.json());
+    console.log(signInSheet);
+    res.json(signInSheet);
 });
 
 // 啟動伺服器
