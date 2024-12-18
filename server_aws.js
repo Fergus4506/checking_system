@@ -574,7 +574,7 @@ app.post('/admin/get_course',async (req, res) => {
         res.json({courses,admin});
     }catch (error) {
         console.error(error);
-        res.message('登入超時請重新登入');
+        res.status(401).send('登入超時請重新登入');
     }
 });
 
@@ -707,6 +707,32 @@ app.get('/get_sheet_date/:id', async (req, res) => {
     res.json(signInSheet);
 });
 
+app.get('/get_all_attendance/:id', async (req, res) => {
+    const course_id = parseInt(req.params.id, 10);
+    // const courseDate = await CourseDate.findAll({ where: { course_id } });
+    const courseDate = await fetch(`${URL}/CourseDate/course/${course_id}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    }).then(res => res.json());
+    console.log(courseDate);
+    const signInSheet_Array = [];
+    for (let i = 0; i < courseDate.course_course_date.Count; i++) {
+        const signInSheet = await fetch(`${URL}/SignInSheet/CourseDate/${courseDate.course_course_date.Items[i].course_date_id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }).then(res => res.json());
+        signInSheet_Array.push({
+            date: courseDate.course_course_date.Items[i].date,
+            signInSheet: signInSheet.course_date_sign_in.Items,
+        });
+    }
+    console.log(signInSheet_Array);
+    res.json(signInSheet_Array);
+});
 // 啟動伺服器
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
