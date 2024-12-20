@@ -550,6 +550,7 @@ app.get('/admin', async (req, res) => {
 // 顯示目前管理者所建立的課程
 app.post('/admin/get_course',async (req, res) => {
     const {token} = req.body;
+    console.log(token)
     try{
         const decoded = jwt.verify(token, SECRET_KEY);
         // const admin = await Admin.findOne({ where: {  id: decoded.admin_id } });

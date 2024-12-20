@@ -153,7 +153,11 @@
 
         async function fetchCourseData() {
             const token = await getCookie('admin_token');
-            if (!token) return;
+            if (!token) {
+                alert('未找到管理員身份驗證，請重新登入');
+                window.location.href = '/admin/login';
+                return;
+            }
 
             try {
                 const response = await fetch('/admin/get_course', {
@@ -241,11 +245,41 @@
                         courseList.appendChild(listItem);
                     });
                 }
+                else{
+                    alert('課程資料獲取失敗');
+                }
             } catch (error) {
                 console.error('課程資料獲取失敗:', error);
             }
         }
         fetchCourseData();
+        // async function checkAdminToken() {
+        //     const token = await getCookie('admin_token');
+        //     if (!token) {
+        //     alert('未找到管理員身份驗證，請重新登入');
+        //     window.location.href = '/login';
+        //     return;
+        //     }
+
+        //     try {
+        //     const response = await fetch('/admin/verify_token', {
+        //         method: 'POST',
+        //         headers: { 'Content-Type': 'application/json' },
+        //         body: JSON.stringify({ token })
+        //     });
+
+        //     if (!response.ok) {
+        //         alert('身份驗證失敗，請重新登入');
+        //         window.location.href = '/login';
+        //     }
+        //     } catch (error) {
+        //     console.error('身份驗證時發生錯誤:', error);
+        //     alert('身份驗證時發生錯誤，請重新登入');
+        //     window.location.href = '/login';
+        //     }
+        // }
+
+        // checkAdminToken();
     </script>
 </body>
 </html>
