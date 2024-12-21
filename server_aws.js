@@ -653,7 +653,7 @@ app.get('/course/:id/qrcode', async (req, res) => {
             return res.status(404).send('課程未找到');
         }
         console.log(courseId);
-        const creat_URL = `http://http://ec2-100-27-109-177.compute-1.amazonaws.com/course/${courseId}`;
+        const creat_URL = `http://ec2-100-27-109-177.compute-1.amazonaws.com/course/${courseId}`;
         const qrCodeImage = await QRCode.toDataURL(creat_URL);
         res.send(`
             <html>
