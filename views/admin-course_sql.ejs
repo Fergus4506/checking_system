@@ -121,7 +121,7 @@
     <h1><%= course.course_sl.Item.name %>課程 - 管理頁面</h1>
     <p>課程描述:<%= course.course_sl.Item.description %></p>
     
-    <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode">生成課堂QR Code</a>
+    <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode" target="_blank">生成課堂QR Code</a>
     <script>
         async function exportAllAttendance() {
             const courseId = "<%= course.course_sl.Item.course_id %>";
