@@ -99,7 +99,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     const token = data.token;
-                    document.getElementById("message").innerText = "新參加者報名成功";
+                    alert('報名成功');
                     document.getElementById("signupForm").style.display = "none";
                     document.cookie = `<%= course.course_sl.Item.name %>=${token}; path=/`;
                     window.location.reload();
