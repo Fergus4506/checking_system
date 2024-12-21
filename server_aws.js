@@ -661,22 +661,24 @@ app.get('/course/:id/qrcode', async (req, res) => {
             <title>${course.course_sl.Item.name}課程 QR Code</title>
             <style>
             body {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                background-color: #f0f0f0;
-                font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
             }
             .container {
-                text-align: center;
-                background: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             }
             img {
-                margin-top: 20px;
+            margin-top: 20px;
+            width: 300px;
+            height: 300px;
             }
             </style>
             </head>

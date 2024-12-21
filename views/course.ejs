@@ -4,6 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= course.course_sl.Item.name %> 報名頁面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #signupForm {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #signupForm h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+            color: #444;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        label {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="tel"] {
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type="submit"] {
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background: linear-gradient(135deg, #2575fc, #6a11cb);
+        }
+
+        #message {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            #signupForm {
+                width: 90%;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            #signupForm h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
     <script>
         const date = new Date();
         const year = date.getFullYear();
@@ -61,7 +157,6 @@
                 document.getElementById("message").innerText = "還未到簽到時間";
                 document.getElementById("signupForm").style.display = "none";
             }else if(userCookie == '使用者未找到'){
-                //跳出提示視窗
                 alert("使用者未找到");
             }else{
                 document.getElementById("message").innerText = "";
@@ -77,9 +172,9 @@
         <h2><%= course.course_sl.Item.name %> 報名頁面</h2>
         <form>
             <label for="name">名稱:</label>
-            <input type="text" id="name" name="name" required><br><br>
+            <input type="text" id="name" name="name" required>
             <label for="phone">電話:</label>
-            <input type="tel" id="phone" name="phone" required><br><br>
+            <input type="tel" id="phone" name="phone" required>
             <input type="hidden" id="courseId" name="courseId" value="<%= course.course_sl.Item.course_id %>">
             <input type="submit" value="提交">
         </form>
