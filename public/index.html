@@ -1,87 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check Course</title>
-    <script>
-        async function getCookie(name) {
-            let cookieArr = document.cookie.split(";");
-            for (let i = 0; i < cookieArr.length; i++) {
-                let cookiePair = cookieArr[i].split("=");
-                console.log(cookiePair);
-                if (name == cookiePair[0].trim()) {
-                    const response = await fetch('http://localhost:3000/check', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: cookiePair[1] })
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
-                }
-            }
-            return null;
-        }
-
-        async function checkCookie() {
-            let userCookie = await getCookie("user");
-            console.log(userCookie);
-            if (userCookie) {
-                document.getElementById("message").innerText = "簽到成功";
-                document.getElementById("signupForm").style.display = "none";
-            } else {
-                document.getElementById("message").innerText = "";
-                document.getElementById("signupForm").style.display = "block";
-            }
-        }
-
-        window.onload = checkCookie;
-    </script>
+    <meta http-equiv="refresh" content="0; url=http://ec2-100-27-109-177.compute-1.amazonaws.com/admin/login" />
+    <title>Redirecting...</title>
 </head>
 <body>
-    <h1 id="message"></h1>
-    <div id="signupForm" style="display:none;">
-        <h2>報名頁面</h2>
-        <form>
-            <label for="name">名稱:</label>
-            <input type="text" id="name" name="name" required><br><br>
-            <label for="phone">電話:</label>
-            <input type="tel" id="phone" name="phone" required><br><br>
-            <input type="submit" value="提交">
-        </form>
-    </div>
-    <script>
-        document.getElementById('signupForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-            try {
-                const response = await fetch('http://localhost:3000/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, phone })
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    const token = data.token;
-                    document.getElementById("message").innerText = "新參加者報名成功";
-                    document.getElementById("signupForm").style.display = "none";
-                    console.log("Token:", token);
-                    document.cookie = "user=" + token;
-                } else {
-                    const error = await response.text();
-                    alert('報名失敗：' + error);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('報名失敗');
-            }
-        });
-    </script>
+    <p>If you are not redirected automatically, follow this <a href="http://ec2-100-27-109-177.compute-1.amazonaws.com/admin/login">link</a>.</p>
 </body>
 </html>
