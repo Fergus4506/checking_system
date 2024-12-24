@@ -13,11 +13,34 @@ const client = new DynamoDBClient({});
 
 const dynamo = DynamoDBDocumentClient.from(client);
 
-let Course_id_counter = 0;
-let CourseDate_id_counter = 0;
-let Participant_id_counter = 0;
-let SignInSheet_id_counter = 0;
-let Admin_id_counter = 0;
+const getIdCounters = async () => {
+    const result = await dynamo.send(
+        new GetCommand({
+            TableName: "store_database_id",
+            Key: { store_id : 0 },
+        })
+    );
+    return result.Item;
+};
+
+const updateIdCounters = async (counters) => {
+    await dynamo.send(
+        new UpdateCommand({
+            TableName: "store_database_id",
+            Key: { store_id : 0 },
+            UpdateExpression: "SET Course_id_counter = :course, CourseDate_id_counter = :courseDate, Participant_id_counter = :participant, SignInSheet_id_counter = :signInSheet, Admin_id_counter = :admin",
+            ExpressionAttributeValues: {
+                ":course": counters.Course_id_counter,
+                ":courseDate": counters.CourseDate_id_counter,
+                ":participant": counters.Participant_id_counter,
+                ":signInSheet": counters.SignInSheet_id_counter,
+                ":admin": counters.Admin_id_counter,
+            },
+        })
+    );
+};
+
+let { Course_id_counter, CourseDate_id_counter, Participant_id_counter, SignInSheet_id_counter, Admin_id_counter } = await getIdCounters();
 
 export const handler = async (event,context) => {
     let body;
@@ -42,6 +65,7 @@ export const handler = async (event,context) => {
                         },
                     })
                 );
+                updateIdCounters({ Course_id_counter, CourseDate_id_counter, Participant_id_counter, SignInSheet_id_counter, Admin_id_counter });
                 body = JSON.stringify({ message: `Course added successfully: ` });
                 break;
             //2.獲取指定課程
@@ -168,6 +192,7 @@ export const handler = async (event,context) => {
                         },
                     })
                 );
+                updateIdCounters({ Course_id_counter, CourseDate_id_counter, Participant_id_counter, SignInSheet_id_counter, Admin_id_counter });
                 body = JSON.stringify({ message: `Admin added successfully: ` });
                 break;
             //7.確認管理員資料
@@ -201,6 +226,7 @@ export const handler = async (event,context) => {
                         },
                     })
                 );
+                updateIdCounters({ Course_id_counter, CourseDate_id_counter, Participant_id_counter, SignInSheet_id_counter, Admin_id_counter });
                 body = JSON.stringify({ message: `Course date added successfully: ` });
                 break;
             //9.獲取指定課程日期
@@ -295,6 +321,7 @@ export const handler = async (event,context) => {
                         },
                     })
                 );
+                updateIdCounters({ Course_id_counter, CourseDate_id_counter, Participant_id_counter, SignInSheet_id_counter, Admin_id_counter });
                 body = JSON.stringify({ message: `Participant added successfully: ` });
                 break;
             //14.獲取指定參與者
@@ -407,6 +434,7 @@ export const handler = async (event,context) => {
                         },
                     })
                 );
+                updateIdCounters({ Course_id_counter, CourseDate_id_counter, Participant_id_counter, SignInSheet_id_counter, Admin_id_counter });
                 body = JSON.stringify({ message: `Sign in sheet added successfully: ` });
                 break;
             //20.獲取指定課程日期的簽到人員
