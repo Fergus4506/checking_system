@@ -16,6 +16,8 @@ const sequelize = new Sequelize('courses_app', 'root', 'Fergus5211', {
     dialect: 'mysql',
 });
 
+
+
 // 定義模型
 const Course = sequelize.define('Course', {
     name: { type: DataTypes.STRING, allowNull: false },
@@ -37,6 +39,13 @@ const SignInSheet = sequelize.define('SignInSheet', {
 const Admin = sequelize.define('Admin', {
     username: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
+}, {
+    indexes: [
+        {
+            unique: true,
+            fields: ['username']
+        }
+    ]
 });
 
 // 課程模型新增關聯

@@ -489,7 +489,7 @@ app.get('/admin/course/:id', async (req, res) => {
         
         console.log(signInSheet_Array);
         if (!course || !course.course_sl.Item) return res.status(404).send('課程未找到');
-        res.render('admin-course_sql_aws', { course, participant, courseDate ,signInSheet_Array});
+        res.render('admin-course_sql', { course, participant, courseDate ,signInSheet_Array});
     } catch (error) {
         console.error(error);
         res.status(500).send('無法載入管理頁面');
@@ -540,7 +540,7 @@ app.post('/admin/register', async (req, res) => {
 });
 
 app.get('/admin/login', async (req, res) => {
-    res.render('admin-login_sql_aws');
+    res.render('admin-login_sql');
 });
 
 // 管理者登入後的頁面

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= course.name %> - 管理頁面</title>
+    <title><%= course.course_sl.Item.name %> - 管理頁面</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -118,13 +118,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 </head>
 <body>
-    <h1><%= course.name %>課程 - 管理頁面</h1>
-    <p>課程描述:<%= course.description %></p>
+    <h1><%= course.course_sl.Item.name %>課程 - 管理頁面</h1>
+    <p>課程描述:<%= course.course_sl.Item.description %></p>
     
-    <a href="/course/<%= course.id %>/qrcode" target="_blank">生成課堂QR Code</a>
+    <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode" target="_blank">生成課堂QR Code</a>
     <script>
         async function exportAllAttendance() {
-            const courseId = "<%= course.id %>";
+            const courseId = "<%= course.course_sl.Item.course_id %>";
             const response = await fetch(`/get_all_attendance/${courseId}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
@@ -164,23 +164,22 @@
     <div class="section">
         <h2>課程日期: <button style="float: right; margin-top: -10px; margin-bottom: 10px;" onclick="exportAllAttendance()">匯出所有報到紀錄</button></h2>
         <ul>
-            <% if (course.CourseDates) { %>
-                <% course.CourseDates.forEach((date, index) => { %>
+            <% if (courseDate && courseDate.course_course_date.Items) { %>
+                <% courseDate.course_course_date.Items.forEach((date, index) => { %>
                     <li>
                         <span onclick="toggleParticipants('<%= index %>')">
-                            <%= date.date %> - 參與人數: <%= (date.SignInSheets && date.SignInSheets.length) || 0 %>
+                            <%= date.date %> - 參與人數: <%= signInSheet_Array[index].Count %>
                             <i id="icon-<%= index %>" class="fas fa-chevron-down"></i>
                         </span>
-                        <div class="btn-group"> 
+                        <div class="btn-group">
                             <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
                             <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
-                            <button onclick="output_Date(<%= date.course_date_id%>,'<%= date.date %>','<%= course.name %>')">匯出本日報到紀錄</button>
+                            <button onclick="output_Date(<%= date.course_date_id%>,'<%= date.date %>','<%= course.course_sl.Item.name %>')">匯出本日報到紀錄</button>
                         </div>
                     </li>
                     <li id="participants-<%= index %>" style="display: none;">
-                        
-                        <% if (date.SignInSheets) { %>
-                            <% date.SignInSheets.forEach(participant => { %>
+                        <% if (signInSheet_Array[index].Count > 0) { %>
+                            <% signInSheet_Array[index].Items.forEach(participant => { %>
                                 <ul class="participant-list">
                                     <div>
                                         <span>報到人員:<%= participant.username %></span>
@@ -206,7 +205,7 @@
         <form id="dateAddForm">
             <label for="date">日期:</label>
             <input type="date" id="date" name="date" required>
-            <input type="hidden" id="courseId" name="courseId" value="<%= course.id %>">
+            <input type="hidden" id="courseId" name="courseId" value="<%= course.course_sl.Item.course_id %>">
             <button type="submit">新增課程日期</button>
         </form>
     </div>
@@ -214,7 +213,7 @@
     <div class="section">
         <h2>參與名單</h2>
         <ul>
-            <% course.Participants.forEach(participant => { %>
+            <% participant.course_participant.Items.forEach(participant => { %>
                 <li class="participant-list">
                     <span><%= participant.username %> - <%= participant.phone %></span>
                 </li>
@@ -222,7 +221,7 @@
         </ul>
     </div>
     <a href="/admin">返回課程管理頁面</a>
-
+    <!-- <a href="/course/<%= course.course_sl.Item.course_id %>/qrcode">返回課程頁面</a> -->
 
     <script>
         function toggleParticipants(index) {
@@ -245,7 +244,7 @@
                 fetch("/edit-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.id %>", index })
+                    body: JSON.stringify({ oldDate: date, newDate, courseId: "<%= course.course_sl.Item.course_id %>", index })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();
@@ -259,7 +258,7 @@
                 fetch("/delete-course-date", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ date, courseId: "<%= course.id %>", index })
+                    body: JSON.stringify({ date, courseId: "<%= course.course_sl.Item.course_id %>", index })
                 }).then(response => {
                     if (response.ok) {
                         location.reload();

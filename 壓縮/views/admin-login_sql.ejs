@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login and Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="email"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .nav {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .nav a {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .nav a:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .nav a.active {
+            background-color: #0056b3;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a id="login-link" class="active" onclick="showLogin()">登入</a>
+            <a id="register-link" onclick="showRegister()">註冊</a>
+        </div>
+        <div id="login-form">
+            <h2>管理者登入</h2>
+            <form>
+                <div class="form-group">
+                    <label for="username">管理者名稱:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">密碼:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" onclick="login()">登入</button>
+            </form>
+        </div>
+        <div id="register-form" style="display: none;">
+            <h2>管理者註冊</h2>
+            <form action="/admin/register" method="POST">
+                <div class="form-group">
+                    <label for="reg-username">管理者名稱:</label>
+                    <input type="text" id="reg-username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">密碼:</label>
+                    <input type="password" id="reg-password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="recheck-password">確認密碼:</label>
+                    <input type="password" id="recheck-password" name="password" required>
+                </div>
+                <button type="submit">註冊帳戶</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function showLogin() {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-link').classList.add('active');
+            document.getElementById('register-link').classList.remove('active');
+        }
+
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+            document.getElementById('login-link').classList.remove('active');
+            document.getElementById('register-link').classList.add('active');
+        }
+        
+        //登入和跳轉頁面
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    // 獲取 token
+                    const data = await response.json();
+                    const token = data.token;
+                    //確認 token是否存在，如果存在刪除該token後再重新設定
+                    if (document.cookie.split(';').some((item) => item.trim().startsWith('admin_token='))) {
+                        document.cookie = "admin_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    }
+                    // 將 token 儲存在 cookie 中（選擇 HttpOnly 和 Secure 在後端設置更為安全）
+                    document.cookie = `admin_token=${token}; path=/`;
+                    alert('登入成功');
+                    window.location = '/admin'
+                } else {
+                    alert('登入失敗');
+                }
+            } catch (error) {
+                console.error('錯誤:', error);
+                alert('伺服器出錯，請稍後再試');
+            }
+        });
+        
+        //註冊
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const recheckPassword = document.getElementById('recheck-password').value;
+            if (password !== recheckPassword) {
+                alert('密碼不一致');
+                return;
+            }
+            const response = await fetch('/admin/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+            if (response.ok) {
+                alert('註冊成功');
+                showLogin();
+            } else {
+                alert('註冊失敗');
+            }
+        });
+
+    </script>
+</body>
+</html>

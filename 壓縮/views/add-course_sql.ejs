@@ -168,10 +168,9 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log(data);
-                    document.getElementById('admin_name').textContent = `管理員: ${data.admin.username}`;
+                    document.getElementById('admin_name').textContent = `管理員: ${data.admin.admin_check.Item.username}`;
                     const courseList = document.querySelector('ul');
-                    data.courses.forEach(course => {
+                    data.courses.admin_course.Items.forEach(course => {
                         const listItem = document.createElement('li');
 
                         const nameInput = document.createElement('input');
@@ -195,7 +194,7 @@
                                     body: JSON.stringify({
                                         name: nameInput.value,
                                         description: descriptionInput.value,
-                                        courseId: course.id
+                                        courseId: course.course_id
                                     })
                                 });
                                 if (editResponse.ok) {
@@ -218,7 +217,7 @@
                                 const deleteResponse = await fetch(`/delete-course`, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ courseId: course.id })
+                                    body: JSON.stringify({ courseId: course.course_id })
                                 });
                                 if (deleteResponse.ok) {
                                     alert('課程刪除成功');
@@ -233,7 +232,7 @@
                         });
 
                         const manageDatesLink = document.createElement('a');
-                        manageDatesLink.href = `/admin/course/${course.id}`;
+                        manageDatesLink.href = `/admin/course/${course.course_id}`;
                         manageDatesLink.textContent = '管理日期';
 
                         buttonGroup.appendChild(saveButton);
@@ -254,6 +253,33 @@
             }
         }
         fetchCourseData();
+        // async function checkAdminToken() {
+        //     const token = await getCookie('admin_token');
+        //     if (!token) {
+        //     alert('未找到管理員身份驗證，請重新登入');
+        //     window.location.href = '/login';
+        //     return;
+        //     }
+
+        //     try {
+        //     const response = await fetch('/admin/verify_token', {
+        //         method: 'POST',
+        //         headers: { 'Content-Type': 'application/json' },
+        //         body: JSON.stringify({ token })
+        //     });
+
+        //     if (!response.ok) {
+        //         alert('身份驗證失敗，請重新登入');
+        //         window.location.href = '/login';
+        //     }
+        //     } catch (error) {
+        //     console.error('身份驗證時發生錯誤:', error);
+        //     alert('身份驗證時發生錯誤，請重新登入');
+        //     window.location.href = '/login';
+        //     }
+        // }
+
+        // checkAdminToken();
     </script>
 </body>
 </html>

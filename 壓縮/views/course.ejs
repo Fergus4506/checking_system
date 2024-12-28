@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= course.name %> 報名頁面</title>
+    <title><%= course.course_sl.Item.name %> 報名頁面</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -120,14 +120,14 @@
                         const response = await fetch('/check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: cookiePair[1].trim(), courseId: "<%= course.id %>", date: today, check_time: check_time })
+                        body: JSON.stringify({ token: cookiePair[1].trim(), courseId: "<%= course.course_sl.Item.course_id %>", date: today, check_time: check_time })
                         });
                         if(response.ok){
                             data = await response.json();
                             console.log(data);
                             if(data.message == "簽到成功")
                                 return true;
-                            else if(data.message == "已經簽到過了")
+                            else if(data.message == "已簽到")
                                 return '已簽到';
                             else if(data.message == "還未到簽到時間")
                                 return '還未到簽到時間';
@@ -143,7 +143,7 @@
         }
 
         async function checkCookie() {
-            let userCookie = await getCookie("<%= course.name %>");
+            let userCookie = await getCookie("<%= course.course_sl.Item.name %>");
             if (userCookie==true) {
                 document.getElementById("message").innerText = "簽到成功";
                 document.getElementById("signupForm").style.display = "none";
@@ -169,13 +169,13 @@
 <body>
     <h1 id="message"></h1>
     <div id="signupForm" style="display:none;">
-        <h2><%= course.name %> 報名頁面</h2>
+        <h2><%= course.course_sl.Item.name %> 報名頁面</h2>
         <form>
             <label for="name">名稱:</label>
             <input type="text" id="name" name="name" required>
             <label for="phone">電話:</label>
             <input type="tel" id="phone" name="phone" required>
-            <input type="hidden" id="courseId" name="courseId" value="<%= course.id %>">
+            <input type="hidden" id="courseId" name="courseId" value="<%= course.course_sl.Item.course_id %>">
             <input type="submit" value="提交">
         </form>
     </div>
@@ -196,7 +196,7 @@
                     const token = data.token;
                     alert('報名成功');
                     document.getElementById("signupForm").style.display = "none";
-                    document.cookie = `<%= course.name %>=${token}; path=/`;
+                    document.cookie = `<%= course.course_sl.Item.name %>=${token}; path=/`;
                     window.location.reload();
                 } else {
                     const error = await response.text();

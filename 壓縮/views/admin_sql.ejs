@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用者管理畫面</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <h1>使用者管理畫面</h1>
+    <h2>使用者: <%= admin.name %></h2>
+    <h3>建立的課程</h3>
+    <ul>
+        <% courses.forEach(function(course) { %>
+            <li>
+                <a href="/courses/<%= course.id %>"><%= course.name %></a>
+            </li>
+        <% }); %>
+    </ul>
+    <h1>新增課程</h1>
+    <form>
+        <label for="name">課程名稱:</label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="description">課程描述:</label>
+        <textarea id="description" name="description" required></textarea>
+        <br>
+        <button type="submit">新增課程</button>
+    </form>
+    <script>
+        const form = document.querySelector("form");
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+            const name = document.querySelector("#name").value;
+            const description = document.querySelector("#description").value;
+            fetch("/add-course", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, description })
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
