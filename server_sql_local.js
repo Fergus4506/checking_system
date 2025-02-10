@@ -7,15 +7,20 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 // 初始化 Express 和資料庫
 const app = express();
-const PORT = 3000;
-const SECRET_KEY = '5000';
+const PORT = process.env.PORT || 3000;
+const SECRET_KEY = process.env.SECRET_KEY || '5000';
 
-// 設定 Sequelize 與 MySQL
-const sequelize = new Sequelize('courses_app', 'root', 'Fergus5211', {
-    host: '127.0.0.1',
+// 從環境變數取得資料庫連線資訊，若無設定則採用預設值
+const DB_NAME     = process.env.DB_DATABASE || 'courses_app';
+const DB_USER     = process.env.DB_USER     || 'root';
+const DB_PASSWORD = process.env.DB_PASSWORD || 'Fergus5211';
+const DB_HOST     = process.env.DB_HOST     || '127.0.0.1';
+
+// 使用 Sequelize 設定 MySQL 資料庫連線
+const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
+    host: DB_HOST,
     dialect: 'mysql',
 });
-
 
 
 // 定義模型
@@ -39,13 +44,6 @@ const SignInSheet = sequelize.define('SignInSheet', {
 const Admin = sequelize.define('Admin', {
     username: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
-}, {
-    indexes: [
-        {
-            unique: true,
-            fields: ['username']
-        }
-    ]
 });
 
 // 課程模型新增關聯
@@ -73,18 +71,28 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 // 提供靜態文件
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 初始化資料庫並同步模型
-(async () => {
+// 檢查資料庫和表格是否存在並同步模型
+async function initializeDatabase() {
     try {
         await sequelize.authenticate();
-        console.log('資料庫連線成功');
-        await sequelize.sync({ alter: true });
-        console.log('資料庫同步完成');
+        console.log('資料庫連接成功');
+
+        // 檢查資料表是否存在
+        const tableNames = await sequelize.getQueryInterface().showAllTables();
+        console.log('資料表清單：', tableNames);
+        if (!tableNames.includes('courses') || !tableNames.includes('coursedates') || !tableNames.includes('participants') || !tableNames.includes('signinsheets') || !tableNames.includes('admins')) {
+            await sequelize.sync({ force: true });
+            console.log('資料表已同步');
+        } else {
+            console.log('資料表已存在，無需同步');
+        }
     } catch (error) {
-        console.error('無法連線到資料庫：', error);
-        process.exit(1);
+        console.error('資料庫初始化失敗：', error);
     }
-})();
+}
+
+// 呼叫初始化資料庫的函數
+initializeDatabase();
 
 // 路由區域
 
@@ -409,6 +417,43 @@ app.get('/course/:id',async (req, res) => {
         res.render('course', { course });
     } else {
         res.status(404).send('課程未找到');
+    }
+});
+
+app.get('/get_all_attendance/:id', async (req, res) => {
+    const course_id = parseInt(req.params.id, 10);
+    try {
+        const courseDates = await CourseDate.findAll({ where: { course_id } });
+        const signInSheet_Array = [];
+
+        for (const courseDate of courseDates) {
+            const signInSheets = await SignInSheet.findAll({ where: { course_date_id: courseDate.id } });
+            signInSheet_Array.push({
+                date: courseDate.date,
+                signInSheet: signInSheets,
+            });
+        }
+
+        res.json(signInSheet_Array);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('無法取得簽到資料');
+    }
+});
+
+app.get('/get_sheet_date/:course_id/:id', async (req, res) => {
+    const course_id = parseInt(req.params.course_id, 10);
+    const id = parseInt(req.params.id, 10);
+    try {
+        const courseDate = await CourseDate.findByPk(id);
+        if (!courseDate) {
+            return res.status(404).send('課程日期未找到');
+        }
+        const signInSheets = await SignInSheet.findAll({ where: { course_date_id: id } });
+        res.json({ course_id, courseDate, signInSheets });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('無法取得簽到資料');
     }
 });
 

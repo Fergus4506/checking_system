@@ -1,0 +1,30 @@
+name: checking_system
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"    # 將容器內 3000 埠對應到主機的 3000 埠
+    depends_on:
+      - db           # 表示 app 服務會依賴 db 服務先啟動
+    environment:
+      # 將資料庫的連線資訊透過環境變數傳入 Node.js 應用（根據你的程式碼調整變數名稱）
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=Fergus5211
+      - DB_DATABASE=courses_app
+
+  db:
+    image: mysql:5.7   # 選用 MySQL 5.7 映像檔，你也可以選其他版本
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Fergus5211
+      MYSQL_DATABASE: courses_app
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    ports:
+      - "3307:3307"   # 將容器內的 MySQL 埠對應到主機的 3307 埠
+    volumes:
+      - db_data:/var/lib/mysql   # 使用 volume 儲存資料庫資料，避免容器重啟時資料遺失
+
+volumes:
+  db_data:

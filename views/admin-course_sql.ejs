@@ -129,7 +129,9 @@
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
+            
             const data = await response.json();
+            console.log(data);
             const workbook = XLSX.utils.book_new();
             data.forEach(record => {
                 const worksheet = XLSX.utils.json_to_sheet(record.signInSheet.map(participant => ({
@@ -144,7 +146,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `attendance_all_dates.xlsx`;
+            a.download = `<%= course.name %>總簽到表.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -174,7 +176,7 @@
                         <div class="btn-group"> 
                             <button onclick="editDate('<%= date.date %>', <%= index %>)">修改</button>
                             <button onclick="deleteDate('<%= date.date %>', <%= index %>)">刪除</button>
-                            <button onclick="output_Date(<%= date.course_date_id%>,'<%= date.date %>','<%= course.name %>')">匯出本日報到紀錄</button>
+                            <button onclick="output_Date('<%= date.id%>','<%= date.date %>','<%= course.name %>')">匯出本日報到紀錄</button>
                         </div>
                     </li>
                     <li id="participants-<%= index %>" style="display: none;">
@@ -270,7 +272,7 @@
         async function output_Date(course_date_id,date,name) {
             console.log(course_date_id);
             // 透過 fetch 取得報到紀錄
-            const response = await fetch(`/get_sheet_date/${course_date_id}`, {
+            const response = await fetch(`/get_sheet_date/${courseId}/${course_date_id}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" },
             });
@@ -278,9 +280,9 @@
             console.log(data);
 
             // 將 signInSheet_Array[index] 的資料轉成 xlsx 格式
-            const worksheet = XLSX.utils.json_to_sheet(data.course_date_sign_in.Items.map(participant => ({
-                username: participant.username,
-                check_time: participant.check_time
+            const worksheet = XLSX.utils.json_to_sheet(data.signInSheets.map(participant => ({
+                "參加者": participant.username,
+                "簽到時間": participant.check_time
             })));
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, `${name}_${date}簽到表`);

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -108,62 +108,60 @@
         const hour = date.getHours();
         const minute = date.getMinutes();
         const second = date.getSeconds();
-        const today = `${year}-${month}-${day}`;
+        const today = date.toISOString().split('T')[0]; // 取得 "YYYY-MM-DD" 部分
         const check_time = `${hour}:${minute}:${second}`;
-        async function getCookie(name) {
-            console.log(document.cookie);
-            let cookieArr = document.cookie.split(";");
-            for (let i = 0; i < cookieArr.length; i++) {
-                let cookiePair = cookieArr[i].split("=");
-                if (name == cookiePair[0].trim()) {
-                    try{
-                        const response = await fetch('/check', {
+
+        // 透過 localStorage 取得 token 並進行簽到驗證
+        async function getLocalToken(name) {
+            const token = localStorage.getItem(name);
+            if (token) {
+                try {
+                    const response = await fetch('/check', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: cookiePair[1].trim(), courseId: "<%= course.id %>", date: today, check_time: check_time })
-                        });
-                        if(response.ok){
-                            data = await response.json();
-                            console.log(data);
-                            if(data.message == "簽到成功")
-                                return true;
-                            else if(data.message == "已經簽到過了")
-                                return '已簽到';
-                            else if(data.message == "還未到簽到時間")
-                                return '還未到簽到時間';
-                            else if(data.message == "使用者未找到")
-                                return '使用者未找到';
-                        }
-                    }catch(error){
-                        console.log(error);
+                        body: JSON.stringify({ token: token, courseId: "<%= course.id %>", date: today, check_time: check_time })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(data);
+                        if(data.message === "簽到成功")
+                            return true;
+                        else if(data.message === "已經簽到過了")
+                            return '已簽到';
+                        else if(data.message === "還未到簽到時間")
+                            return '還未到簽到時間';
+                        else if(data.message === "使用者未找到")
+                            return '使用者未找到';
                     }
+                } catch(error) {
+                    console.log(error);
                 }
             }
             return null;
         }
 
-        async function checkCookie() {
-            let userCookie = await getCookie("<%= course.name %>");
-            if (userCookie==true) {
+        async function checkLocalToken() {
+            let tokenStatus = await getLocalToken("<%= course.name %>");
+            if (tokenStatus === true) {
                 document.getElementById("message").innerText = "簽到成功";
                 document.getElementById("signupForm").style.display = "none";
-            } else if (userCookie == null){
+            } else if (tokenStatus === null){
                 document.getElementById("message").innerText = "";
                 document.getElementById("signupForm").style.display = "block";
-            }else if(userCookie == '已簽到'){
+            } else if(tokenStatus === '已簽到'){
                 document.getElementById("message").innerText = "已簽到";
                 document.getElementById("signupForm").style.display = "none";
-            }else if(userCookie == '還未到簽到時間'){
+            } else if(tokenStatus === '還未到簽到時間'){
                 document.getElementById("message").innerText = "還未到簽到時間";
                 document.getElementById("signupForm").style.display = "none";
-            }else if(userCookie == '使用者未找到'){
+            } else if(tokenStatus === '使用者未找到'){
                 alert("使用者未找到");
-            }else{
+            } else {
                 document.getElementById("message").innerText = "";
                 document.getElementById("signupForm").style.display = "block";
             }
         }
-        document.addEventListener('DOMContentLoaded', checkCookie);
+        document.addEventListener('DOMContentLoaded', checkLocalToken);
     </script>
 </head>
 <body>
@@ -189,14 +187,15 @@
                 const response = await fetch('/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, phone, courseId, date: today, check_time: check_time})
+                    body: JSON.stringify({ username, phone, courseId, date: today, check_time: check_time })
                 });
                 if (response.ok) {
                     const data = await response.json();
                     const token = data.token;
                     alert('報名成功');
                     document.getElementById("signupForm").style.display = "none";
-                    document.cookie = `<%= course.name %>=${token}; path=/`;
+                    // 將 token 儲存到 localStorage 中
+                    localStorage.setItem("<%= course.name %>", token);
                     window.location.reload();
                 } else {
                     const error = await response.text();
